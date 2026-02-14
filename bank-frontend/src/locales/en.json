@@ -1,0 +1,97 @@
+{
+  "header": {
+    "title": "Appointment Booking",
+    "logo": "Commerce Bank"
+  },
+  "steps": {
+    "personalInfo": "Personal Information",
+    "selectTopic": "Select Topic",
+    "selectBranch": "Select Branch",
+    "selectDateTime": "Select Date & Time",
+    "confirmation": "Confirmation"
+  },
+  "step0": {
+    "title": "Welcome! Let's get started.",
+    "description": "Please provide your contact information to book an appointment.",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "firstNamePlaceholder": "John",
+    "lastNamePlaceholder": "Doe",
+    "emailPlaceholder": "john.doe@example.com",
+    "phonePlaceholder": "(555) 123-4567"
+  },
+  "step1": {
+    "title": "What brings you in today?",
+    "description": "Select the reason for your appointment."
+  },
+  "step2": {
+    "title": "Choose your preferred branch",
+    "description": "Showing branches that offer",
+    "services": "services.",
+    "weekday": "Mon-Fri:",
+    "saturday": "Saturday:"
+  },
+  "step3": {
+    "title": "Pick your date and time",
+    "description": "Select an available appointment slot at",
+    "dateLabel": "Appointment Date",
+    "dateHint": "Available Monday through Saturday",
+    "timeLabel": "Available Time Slots (30 minutes each)",
+    "noSlots": "No available slots for this date. Please select another date."
+  },
+  "step4": {
+    "title": "Appointment Confirmed!",
+    "message": "Your appointment has been successfully scheduled. A confirmation email has been sent to",
+    "summaryHeading": "Appointment Details",
+    "contactInfo": "Contact Information",
+    "appointmentType": "Appointment Type",
+    "location": "Location",
+    "dateTime": "Date & Time",
+    "bookAnother": "Book Another Appointment",
+    "note": "Please arrive 10 minutes early to your appointment. If you need to reschedule or cancel, please contact us at least 24 hours in advance."
+  },
+  "topics": {
+    "checkingAccount": "Checking Account",
+    "checkingAccountDesc": "Open or manage checking accounts",
+    "savingsAccount": "Savings Account",
+    "savingsAccountDesc": "Open or manage savings accounts",
+    "cdsMoneyMarket": "CDs/Money Market Accounts",
+    "cdsMoneyMarketDesc": "Certificates of deposit and money market options",
+    "studentBanking": "Student Banking",
+    "studentBankingDesc": "Banking solutions for students",
+    "autoLoans": "Auto Loans",
+    "autoLoansDesc": "Vehicle financing and auto loans",
+    "homeEquity": "Home Equity",
+    "homeEquityDesc": "Home equity loans and lines of credit",
+    "mortgage": "Mortgage",
+    "mortgageDesc": "Home loans and mortgage services",
+    "studentLoans": "Student Loans",
+    "studentLoansDesc": "Education financing and student loans",
+    "retirement": "Saving for Retirement",
+    "retirementDesc": "Retirement planning and accounts",
+    "investmentAccount": "Investment Account",
+    "investmentAccountDesc": "Investment services and brokerage accounts",
+    "creditCard": "Credit Card",
+    "creditCardDesc": "Apply for or manage credit cards",
+    "other": "Other",
+    "otherDesc": "General inquiries and other services"
+  },
+  "buttons": {
+    "continue": "Continue",
+    "back": "Back",
+    "confirm": "Confirm Appointment"
+  },
+  "footer": {
+    "copyright": "© 2026 Commerce Bank. All rights reserved.",
+    "help": "Need help? Contact us at (816) 234-2000"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language"
+  },
+  "accessibility": {
+    "readAloud": "Read aloud"
+  }
+}

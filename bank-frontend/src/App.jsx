@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import SettingsMenu from './components/SettingsMenu';
+import TextToSpeechButton from './components/TextToSpeechButton';
 import './App.css';
 
-// Mock data - will be replaced by API calls later
-const TOPICS = [
-  { id: 1, name: 'Checking Account', description: 'Open or manage checking accounts' },
-  { id: 2, name: 'Savings Account', description: 'Open or manage savings accounts' },
-  { id: 3, name: 'CDs/Money Market Accounts', description: 'Certificates of deposit and money market options' },
-  { id: 4, name: 'Student Banking', description: 'Banking solutions for students' },
-  { id: 5, name: 'Auto Loans', description: 'Vehicle financing and auto loans' },
-  { id: 6, name: 'Home Equity', description: 'Home equity loans and lines of credit' },
-  { id: 7, name: 'Mortgage', description: 'Home loans and mortgage services' },
-  { id: 8, name: 'Student Loans', description: 'Education financing and student loans' },
-  { id: 9, name: 'Saving for Retirement', description: 'Retirement planning and accounts' },
-  { id: 10, name: 'Investment Account', description: 'Investment services and brokerage accounts' },
-  { id: 11, name: 'Credit Card', description: 'Apply for or manage credit cards' },
-  { id: 12, name: 'Other', description: 'General inquiries and other services' },
+// Topics will be translated in the component using i18n
+const TOPICS_CONFIG = [
+  { id: 1, key: 'checkingAccount' },
+  { id: 2, key: 'savingsAccount' },
+  { id: 3, key: 'cdsMoneyMarket' },
+  { id: 4, key: 'studentBanking' },
+  { id: 5, key: 'autoLoans' },
+  { id: 6, key: 'homeEquity' },
+  { id: 7, key: 'mortgage' },
+  { id: 8, key: 'studentLoans' },
+  { id: 9, key: 'retirement' },
+  { id: 10, key: 'investmentAccount' },
+  { id: 11, key: 'creditCard' },
+  { id: 12, key: 'other' },
 ];
 
 const BRANCHES = [
@@ -56,6 +59,7 @@ const BOOKED_SLOTS = [
 ];
 
 function App() {
+  const { t, i18n } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -69,11 +73,11 @@ function App() {
   });
 
   const steps = [
-    'Personal Information',
-    'Select Topic',
-    'Select Branch',
-    'Select Date & Time',
-    'Confirmation'
+    t('steps.personalInfo'),
+    t('steps.selectTopic'),
+    t('steps.selectBranch'),
+    t('steps.selectDateTime'),
+    t('steps.confirmation')
   ];
 
   // Generate available time slots
@@ -183,9 +187,13 @@ function App() {
               <rect width="40" height="40" rx="8" fill="var(--color-primary)"/>
               <path d="M12 20L18 26L28 14" stroke="var(--color-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span className="logo-text">Commerce Bank</span>
+            <span className="logo-text">{t('header.logo')}</span>
           </div>
-          <div className="header-title">Appointment Booking</div>
+          <div className="header-title">
+            {t('header.title')}
+            <TextToSpeechButton text={t('header.title')} />
+          </div>
+          <SettingsMenu />
         </div>
       </header>
 
@@ -223,55 +231,61 @@ function App() {
           {/* Step 0: Personal Information */}
           {currentStep === 0 && (
             <div className="step-content fade-in">
-              <h2 className="step-title">Welcome! Let's get started.</h2>
-              <p className="step-description">Please provide your contact information to book an appointment.</p>
+              <h2 className="step-title">
+                {t('step0.title')}
+                <TextToSpeechButton text={t('step0.title')} />
+              </h2>
+              <p className="step-description">
+                {t('step0.description')}
+                <TextToSpeechButton text={t('step0.description')} />
+              </p>
               
               <div className="form-grid">
                 <div className="form-group">
-                  <label htmlFor="firstName">First Name *</label>
+                  <label htmlFor="firstName">{t('step0.firstName')} *</label>
                   <input
                     type="text"
                     id="firstName"
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    placeholder="John"
+                    placeholder={t('step0.firstNamePlaceholder')}
                     required
                   />
                 </div>
                 
                 <div className="form-group">
-                  <label htmlFor="lastName">Last Name *</label>
+                  <label htmlFor="lastName">{t('step0.lastName')} *</label>
                   <input
                     type="text"
                     id="lastName"
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    placeholder="Doe"
+                    placeholder={t('step0.lastNamePlaceholder')}
                     required
                   />
                 </div>
               </div>
 
               <div className="form-group">
-                <label htmlFor="email">Email Address *</label>
+                <label htmlFor="email">{t('step0.email')} *</label>
                 <input
                   type="email"
                   id="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="john.doe@example.com"
+                  placeholder={t('step0.emailPlaceholder')}
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="phone">Phone Number *</label>
+                <label htmlFor="phone">{t('step0.phone')} *</label>
                 <input
                   type="tel"
                   id="phone"
                   value={formData.phone}
                   onChange={handlePhoneChange}
-                  placeholder="(555) 123-4567"
+                  placeholder={t('step0.phonePlaceholder')}
                   maxLength="14"
                   required
                 />
@@ -282,26 +296,42 @@ function App() {
           {/* Step 1: Select Topic */}
           {currentStep === 1 && (
             <div className="step-content fade-in">
-              <h2 className="step-title">What brings you in today?</h2>
-              <p className="step-description">Select the reason for your appointment.</p>
+              <h2 className="step-title">
+                {t('step1.title')}
+                <TextToSpeechButton text={t('step1.title')} />
+              </h2>
+              <p className="step-description">
+                {t('step1.description')}
+                <TextToSpeechButton text={t('step1.description')} />
+              </p>
               
               <div className="topic-grid">
-                {TOPICS.map((topic) => (
-                  <div
-                    key={topic.id}
-                    className={`topic-card ${formData.topic?.id === topic.id ? 'selected' : ''}`}
-                    onClick={() => setFormData({ ...formData, topic, branch: null })}
-                  >
-                    <div className="topic-icon">
-                      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                        <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2"/>
-                        <path d="M12 16L15 19L20 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+                {TOPICS_CONFIG.map((topicConfig) => {
+                  const topic = {
+                    id: topicConfig.id,
+                    name: t(`topics.${topicConfig.key}`),
+                    description: t(`topics.${topicConfig.key}Desc`)
+                  };
+                  return (
+                    <div
+                      key={topic.id}
+                      className={`topic-card ${formData.topic?.id === topic.id ? 'selected' : ''}`}
+                      onClick={() => setFormData({ ...formData, topic, branch: null })}
+                    >
+                      <div className="topic-icon">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                          <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2"/>
+                          <path d="M12 16L15 19L20 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <h3 className="topic-name">
+                        {topic.name}
+                        <TextToSpeechButton text={topic.name} />
+                      </h3>
+                      <p className="topic-description">{topic.description}</p>
                     </div>
-                    <h3 className="topic-name">{topic.name}</h3>
-                    <p className="topic-description">{topic.description}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -309,9 +339,13 @@ function App() {
           {/* Step 2: Select Branch */}
           {currentStep === 2 && (
             <div className="step-content fade-in">
-              <h2 className="step-title">Choose your preferred branch</h2>
+              <h2 className="step-title">
+                {t('step2.title')}
+                <TextToSpeechButton text={t('step2.title')} />
+              </h2>
               <p className="step-description">
-                Showing branches that offer <strong>{formData.topic?.name}</strong> services.
+                {t('step2.description')} <strong>{formData.topic?.name}</strong> {t('step2.services')}
+                <TextToSpeechButton text={`${t('step2.description')} ${formData.topic?.name} ${t('step2.services')}`} />
               </p>
               
               <div className="branch-list">
@@ -322,7 +356,10 @@ function App() {
                     onClick={() => setFormData({ ...formData, branch, date: '', time: '' })}
                   >
                     <div className="branch-header">
-                      <h3 className="branch-name">{branch.name}</h3>
+                      <h3 className="branch-name">
+                        {branch.name}
+                        <TextToSpeechButton text={branch.name} />
+                      </h3>
                       <div className={`branch-radio ${formData.branch?.id === branch.id ? 'checked' : ''}`}>
                         {formData.branch?.id === branch.id && <div className="radio-dot" />}
                       </div>
@@ -330,11 +367,11 @@ function App() {
                     <p className="branch-address">{branch.address}</p>
                     <div className="branch-hours">
                       <div className="hours-row">
-                        <span className="hours-label">Mon-Fri:</span>
+                        <span className="hours-label">{t('step2.weekday')}</span>
                         <span className="hours-value">{branch.businessHours.weekday}</span>
                       </div>
                       <div className="hours-row">
-                        <span className="hours-label">Saturday:</span>
+                        <span className="hours-label">{t('step2.saturday')}</span>
                         <span className="hours-value">{branch.businessHours.saturday}</span>
                       </div>
                     </div>
@@ -347,14 +384,18 @@ function App() {
           {/* Step 3: Select Date & Time */}
           {currentStep === 3 && (
             <div className="step-content fade-in">
-              <h2 className="step-title">Pick your date and time</h2>
+              <h2 className="step-title">
+                {t('step3.title')}
+                <TextToSpeechButton text={t('step3.title')} />
+              </h2>
               <p className="step-description">
-                Select an available appointment slot at <strong>{formData.branch?.name}</strong>.
+                {t('step3.description')} <strong>{formData.branch?.name}</strong>.
+                <TextToSpeechButton text={`${t('step3.description')} ${formData.branch?.name}`} />
               </p>
               
               <div className="datetime-container">
                 <div className="form-group">
-                  <label htmlFor="date">Appointment Date *</label>
+                  <label htmlFor="date">{t('step3.dateLabel')} *</label>
                   <input
                     type="date"
                     id="date"
@@ -364,12 +405,15 @@ function App() {
                     max={getMaxDate()}
                     required
                   />
-                  <p className="input-hint">Available Monday through Saturday</p>
+                  <p className="input-hint">{t('step3.dateHint')}</p>
                 </div>
 
                 {formData.date && (
                   <div className="time-slots-section">
-                    <label>Available Time Slots (30 minutes each) *</label>
+                    <label>
+                      {t('step3.timeLabel')} *
+                      <TextToSpeechButton text={t('step3.timeLabel')} />
+                    </label>
                     <div className="time-slots-grid">
                       {generateTimeSlots(formData.date, formData.branch).length > 0 ? (
                         generateTimeSlots(formData.date, formData.branch).map((time) => (
@@ -383,7 +427,10 @@ function App() {
                           </button>
                         ))
                       ) : (
-                        <p className="no-slots">No available slots for this date. Please select another date.</p>
+                        <p className="no-slots">
+                          {t('step3.noSlots')}
+                          <TextToSpeechButton text={t('step3.noSlots')} />
+                        </p>
                       )}
                     </div>
                   </div>
@@ -403,16 +450,23 @@ function App() {
                 </svg>
               </div>
               
-              <h2 className="confirmation-title">Appointment Confirmed!</h2>
+              <h2 className="confirmation-title">
+                {t('step4.title')}
+                <TextToSpeechButton text={t('step4.title')} />
+              </h2>
               <p className="confirmation-message">
-                Your appointment has been successfully scheduled. A confirmation email has been sent to <strong>{formData.email}</strong>.
+                {t('step4.message')} <strong>{formData.email}</strong>.
+                <TextToSpeechButton text={`${t('step4.message')} ${formData.email}`} />
               </p>
 
               <div className="appointment-summary">
-                <h3 className="summary-heading">Appointment Details</h3>
+                <h3 className="summary-heading">
+                  {t('step4.summaryHeading')}
+                  <TextToSpeechButton text={t('step4.summaryHeading')} />
+                </h3>
                 
                 <div className="summary-section">
-                  <div className="summary-label">Contact Information</div>
+                  <div className="summary-label">{t('step4.contactInfo')}</div>
                   <div className="summary-value">{formData.firstName} {formData.lastName}</div>
                   <div className="summary-value secondary">{formData.email}</div>
                   <div className="summary-value secondary">{formData.phone}</div>
@@ -421,14 +475,14 @@ function App() {
                 <div className="summary-divider"></div>
 
                 <div className="summary-section">
-                  <div className="summary-label">Appointment Type</div>
+                  <div className="summary-label">{t('step4.appointmentType')}</div>
                   <div className="summary-value">{formData.topic?.name}</div>
                 </div>
 
                 <div className="summary-divider"></div>
 
                 <div className="summary-section">
-                  <div className="summary-label">Location</div>
+                  <div className="summary-label">{t('step4.location')}</div>
                   <div className="summary-value">{formData.branch?.name}</div>
                   <div className="summary-value secondary">{formData.branch?.address}</div>
                 </div>
@@ -436,9 +490,9 @@ function App() {
                 <div className="summary-divider"></div>
 
                 <div className="summary-section">
-                  <div className="summary-label">Date & Time</div>
+                  <div className="summary-label">{t('step4.dateTime')}</div>
                   <div className="summary-value">
-                    {new Date(formData.date + 'T00:00:00').toLocaleDateString('en-US', {
+                    {new Date(formData.date + 'T00:00:00').toLocaleDateString(i18n.language === 'es' ? 'es-ES' : 'en-US', {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
@@ -466,13 +520,13 @@ function App() {
                     });
                   }}
                 >
-                  Book Another Appointment
+                  {t('step4.bookAnother')}
                 </button>
               </div>
 
               <p className="confirmation-note">
-                Please arrive 10 minutes early to your appointment. If you need to reschedule or cancel, 
-                please contact us at least 24 hours in advance.
+                {t('step4.note')}
+                <TextToSpeechButton text={t('step4.note')} />
               </p>
             </div>
           )}
@@ -485,7 +539,7 @@ function App() {
                   className="btn btn-secondary"
                   onClick={handleBack}
                 >
-                  Back
+                  {t('buttons.back')}
                 </button>
               )}
               
@@ -494,7 +548,7 @@ function App() {
                 onClick={currentStep === 3 ? handleSubmit : handleNext}
                 disabled={!canProceed()}
               >
-                {currentStep === 3 ? 'Confirm Appointment' : 'Continue'}
+                {currentStep === 3 ? t('buttons.confirm') : t('buttons.continue')}
               </button>
             </div>
           )}
@@ -503,8 +557,8 @@ function App() {
 
       {/* Footer */}
       <footer className="app-footer">
-        <p>© 2026 Commerce Bank. All rights reserved.</p>
-        <p className="footer-note">Need help? Contact us at (816) 234-2000</p>
+        <p>{t('footer.copyright')}</p>
+        <p className="footer-note">{t('footer.help')}</p>
       </footer>
     </div>
   );

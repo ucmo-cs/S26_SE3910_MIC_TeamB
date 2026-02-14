@@ -1,0 +1,97 @@
+{
+  "header": {
+    "title": "Reserva de Citas",
+    "logo": "Commerce Bank"
+  },
+  "steps": {
+    "personalInfo": "Información Personal",
+    "selectTopic": "Seleccionar Tema",
+    "selectBranch": "Seleccionar Sucursal",
+    "selectDateTime": "Seleccionar Fecha y Hora",
+    "confirmation": "Confirmación"
+  },
+  "step0": {
+    "title": "¡Bienvenido! Empecemos.",
+    "description": "Por favor proporcione su información de contacto para reservar una cita.",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "email": "Correo Electrónico",
+    "phone": "Número de Teléfono",
+    "firstNamePlaceholder": "Juan",
+    "lastNamePlaceholder": "Pérez",
+    "emailPlaceholder": "juan.perez@ejemplo.com",
+    "phonePlaceholder": "(555) 123-4567"
+  },
+  "step1": {
+    "title": "¿Qué lo trae hoy?",
+    "description": "Seleccione el motivo de su cita."
+  },
+  "step2": {
+    "title": "Elija su sucursal preferida",
+    "description": "Mostrando sucursales que ofrecen",
+    "services": "servicios.",
+    "weekday": "Lun-Vie:",
+    "saturday": "Sábado:"
+  },
+  "step3": {
+    "title": "Elija su fecha y hora",
+    "description": "Seleccione un horario de cita disponible en",
+    "dateLabel": "Fecha de la Cita",
+    "dateHint": "Disponible de lunes a sábado",
+    "timeLabel": "Horarios Disponibles (30 minutos cada uno)",
+    "noSlots": "No hay horarios disponibles para esta fecha. Por favor seleccione otra fecha."
+  },
+  "step4": {
+    "title": "¡Cita Confirmada!",
+    "message": "Su cita ha sido programada exitosamente. Se ha enviado un correo de confirmación a",
+    "summaryHeading": "Detalles de la Cita",
+    "contactInfo": "Información de Contacto",
+    "appointmentType": "Tipo de Cita",
+    "location": "Ubicación",
+    "dateTime": "Fecha y Hora",
+    "bookAnother": "Reservar Otra Cita",
+    "note": "Por favor llegue 10 minutos antes de su cita. Si necesita reprogramar o cancelar, por favor contáctenos al menos 24 horas antes."
+  },
+  "topics": {
+    "checkingAccount": "Cuenta Corriente",
+    "checkingAccountDesc": "Abrir o administrar cuentas corrientes",
+    "savingsAccount": "Cuenta de Ahorros",
+    "savingsAccountDesc": "Abrir o administrar cuentas de ahorros",
+    "cdsMoneyMarket": "CDs/Cuentas del Mercado Monetario",
+    "cdsMoneyMarketDesc": "Certificados de depósito y opciones del mercado monetario",
+    "studentBanking": "Banca Estudiantil",
+    "studentBankingDesc": "Soluciones bancarias para estudiantes",
+    "autoLoans": "Préstamos para Automóviles",
+    "autoLoansDesc": "Financiamiento de vehículos y préstamos para automóviles",
+    "homeEquity": "Capital de Vivienda",
+    "homeEquityDesc": "Préstamos y líneas de crédito sobre el capital de vivienda",
+    "mortgage": "Hipoteca",
+    "mortgageDesc": "Préstamos para vivienda y servicios hipotecarios",
+    "studentLoans": "Préstamos Estudiantiles",
+    "studentLoansDesc": "Financiamiento educativo y préstamos estudiantiles",
+    "retirement": "Ahorro para el Retiro",
+    "retirementDesc": "Planificación de retiro y cuentas",
+    "investmentAccount": "Cuenta de Inversión",
+    "investmentAccountDesc": "Servicios de inversión y cuentas de corretaje",
+    "creditCard": "Tarjeta de Crédito",
+    "creditCardDesc": "Solicitar o administrar tarjetas de crédito",
+    "other": "Otro",
+    "otherDesc": "Consultas generales y otros servicios"
+  },
+  "buttons": {
+    "continue": "Continuar",
+    "back": "Atrás",
+    "confirm": "Confirmar Cita"
+  },
+  "footer": {
+    "copyright": "© 2026 Commerce Bank. Todos los derechos reservados.",
+    "help": "¿Necesita ayuda? Contáctenos al (816) 234-2000"
+  },
+  "settings": {
+    "title": "Configuración",
+    "language": "Idioma"
+  },
+  "accessibility": {
+    "readAloud": "Leer en voz alta"
+  }
+}

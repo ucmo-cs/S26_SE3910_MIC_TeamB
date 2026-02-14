@@ -1,0 +1,59 @@
+.language-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.language-toggle-label {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+}
+
+.language-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: white;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  width: 100%;
+  text-align: left;
+}
+
+.language-option:hover {
+  border-color: var(--color-accent);
+  background: var(--color-background);
+  transform: translateX(2px);
+}
+
+.language-option.active {
+  border-color: var(--color-primary);
+  background: linear-gradient(135deg, rgba(26, 77, 46, 0.05) 0%, rgba(200, 168, 130, 0.05) 100%);
+  font-weight: 600;
+}
+
+.language-flag {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.language-name {
+  flex: 1;
+}
+
+.check-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
