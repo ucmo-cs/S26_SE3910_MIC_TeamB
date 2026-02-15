@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsMenu from './components/SettingsMenu';
 import TextToSpeechButton from './components/TextToSpeechButton';
+import Login from "./Login";
 import './App.css';
 
 // Topics will be translated in the component using i18n
@@ -71,6 +72,37 @@ function App() {
     date: '',
     time: '',
   });
+  export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const storedLogin = localStorage.getItem("isLoggedIn");
+    if (storedLogin === "true") {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    setIsLoggedIn(false);
+  };
+
+  if (!isLoggedIn) {
+    return <Login onLogin={() => setIsLoggedIn(true)} />;
+  }
+
+  return (
+    <div className="dashboard">
+      <div className="card">
+        <h1>Welcome 👋</h1>
+        <p>You are logged in.</p>
+        <button className="btn logout" onClick={handleLogout}>
+          Logout
+        </button>
+      </div>
+    </div>
+  );
+}
 
   const steps = [
     t('steps.personalInfo'),
