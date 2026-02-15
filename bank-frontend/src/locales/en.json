@@ -3,6 +3,19 @@
     "title": "Appointment Booking",
     "logo": "Commerce Bank"
   },
+  "login": {
+    "title": "Sign In",
+    "description": "Enter your credentials to access appointment booking.",
+    "email": "Email or Username",
+    "password": "Password",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "Enter password",
+    "submit": "Sign In",
+    "errorEmpty": "Please enter both email and password.",
+    "hint": "Demo: use any email and password to sign in.",
+    "welcome": "Welcome, {{name}}",
+    "logout": "Log Out"
+  },
   "steps": {
     "personalInfo": "Personal Information",
     "selectTopic": "Select Topic",

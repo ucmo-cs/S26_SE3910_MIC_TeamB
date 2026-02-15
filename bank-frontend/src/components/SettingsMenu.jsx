@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import LanguageToggle from './LanguageToggle';
 import './SettingsMenu.css';
 
-const SettingsMenu = () => {
+const SettingsMenu = ({ onLogout }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
@@ -89,6 +89,18 @@ const SettingsMenu = () => {
           </div>
           <div className="settings-dropdown-content">
             <LanguageToggle />
+            {onLogout && (
+              <button
+                type="button"
+                className="settings-logout"
+                onClick={() => {
+                  onLogout();
+                  setIsOpen(false);
+                }}
+              >
+                {t('login.logout')}
+              </button>
+            )}
           </div>
         </div>
       )}

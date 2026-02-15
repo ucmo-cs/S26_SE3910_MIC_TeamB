@@ -2,13 +2,16 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsMenu from './components/SettingsMenu';
 import TextToSpeechButton from './components/TextToSpeechButton';
+import Login from './login';
 
 import './App.css';
+
+const USER_STORAGE_KEY = 'bank-app-user';
 
 // Topics will be translated in the component using i18n
 const TOPICS_CONFIG = [
   { id: 1, key: 'checkingAccount' },
-  { id: 2, key: 'savingsAccount' },
+  { id: 2, key: 'savingsAccount' }, // td
   { id: 3, key: 'cdsMoneyMarket' },
   { id: 4, key: 'studentBanking' },
   { id: 5, key: 'autoLoans' },
@@ -61,17 +64,35 @@ const BOOKED_SLOTS = [
 
 function App() {
   const { t, i18n } = useTranslation();
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem(USER_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    }
+  }, [user]);
+
+  const handleLogout = () => setUser(null);
+
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    topic: null,
-    branch: null,
-    date: '',
+    // ...
     time: '',
   });
+
+  if (!user) {
+    return <Login onLogin={setUser} />;
+  }
 
   const steps = [
     t('steps.personalInfo'),
@@ -194,7 +215,10 @@ function App() {
             {t('header.title')}
             <TextToSpeechButton text={t('header.title')} />
           </div>
-          <SettingsMenu />
+          <div className="header-right">
+            <span className="header-welcome">{t('login.welcome', { name: user.displayName })}</span>
+            <SettingsMenu onLogout={handleLogout} />
+          </div>
         </div>
       </header>
 

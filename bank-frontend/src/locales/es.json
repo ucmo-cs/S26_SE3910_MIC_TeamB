@@ -3,6 +3,19 @@
     "title": "Reserva de Citas",
     "logo": "Commerce Bank"
   },
+    "login": {
+    "title": "Iniciar Sesión",
+    "description": "Ingrese sus credenciales para acceder a la reserva de citas.",
+    "email": "Correo o Usuario",
+    "password": "Contraseña",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "passwordPlaceholder": "Ingrese contraseña",
+    "submit": "Iniciar Sesión",
+    "errorEmpty": "Por favor ingrese correo y contraseña.",
+    "hint": "Demo: use cualquier correo y contraseña para entrar.",
+    "welcome": "Bienvenido, {{name}}",
+    "logout": "Cerrar Sesión"
+  },
   "steps": {
     "personalInfo": "Información Personal",
     "selectTopic": "Seleccionar Tema",

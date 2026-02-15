@@ -48,6 +48,17 @@
   gap: var(--space-xs);
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.header-welcome {
+  font-size: 0.9375rem;
+  opacity: 0.95;
+}
+
 /* Progress Bar Styles */
 .progress-container {
   background: white;
@@ -722,6 +733,15 @@
 
   .header-title {
     font-size: 1rem;
+  }
+  
+  .header-right {
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .header-welcome {
+    font-size: 0.875rem;
   }
 
   .progress-container {
