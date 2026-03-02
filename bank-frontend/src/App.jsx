@@ -25,33 +25,33 @@ const TOPICS_CONFIG = [
 ];
 
 const BRANCHES = [
-  { 
-    id: 1, 
-    name: 'Downtown Branch', 
-    address: '123 Main St, Kansas City, MO',
-    topics: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], // Full service branch
-    businessHours: { weekday: '9:00 AM - 5:00 PM', saturday: '9:00 AM - 1:00 PM' }
+  {
+    id: 1,
+    name: 'Raytown',
+    address: '6705 Blue Ridge Blvd, Raytown, MO 64133',
+    topics: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    businessHours: { weekday: '8:30 AM – 5:30 PM', saturday: 'Closed' }
   },
-  { 
-    id: 2, 
-    name: 'Westside Branch', 
-    address: '456 Oak Ave, Kansas City, MO',
-    topics: [1, 2, 3, 4, 11, 12], // Basic banking services
-    businessHours: { weekday: '9:00 AM - 6:00 PM', saturday: '10:00 AM - 2:00 PM' }
+  {
+    id: 2,
+    name: 'Woods Chapel',
+    address: '750 NE Woods Chapel Rd, Lee\'s Summit, MO 64064',
+    topics: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    businessHours: { weekday: '8:30 AM – 5:30 PM', saturday: 'Closed' }
   },
-  { 
-    id: 3, 
-    name: 'Plaza Branch', 
-    address: '789 Country Club Plaza, Kansas City, MO',
-    topics: [1, 2, 3, 5, 6, 7, 9, 10, 11, 12], // Banking and investments
-    businessHours: { weekday: '8:00 AM - 5:00 PM', saturday: 'Closed' }
+  {
+    id: 3,
+    name: 'Blue Hills',
+    address: '6100 Troost Ave, Kansas City, MO 64110',
+    topics: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    businessHours: { weekday: '8:30 AM – 5:30 PM', saturday: 'Closed' }
   },
-  { 
-    id: 4, 
-    name: 'Northland Branch', 
-    address: '321 North St, Kansas City, MO',
-    topics: [1, 2, 3, 4, 5, 7, 8, 11, 12], // Banking and loans
-    businessHours: { weekday: '9:00 AM - 5:00 PM', saturday: '9:00 AM - 12:00 PM' }
+  {
+    id: 4,
+    name: 'Grandview',
+    address: '12829 U.S. 71 Frontage, Grandview, MO 64030',
+    topics: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    businessHours: { weekday: '8:30 AM – 5:30 PM', saturday: 'Closed' }
   },
 ];
 
@@ -105,32 +105,30 @@ function App() {
   // Generate available time slots
   const generateTimeSlots = (selectedDate, selectedBranch) => {
     if (!selectedDate || !selectedBranch) return [];
-    
+
     const date = new Date(selectedDate);
     const dayOfWeek = date.getDay();
     const isSaturday = dayOfWeek === 6;
     const isSunday = dayOfWeek === 0;
-    
+
     if (isSunday) return [];
-    
+
     const slots = [];
     const startHour = isSaturday ? 9 : 9;
     const endHour = isSaturday ? 13 : 17;
-    
+
     for (let hour = startHour; hour < endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        const isBooked = BOOKED_SLOTS.some(
-          slot => slot.branchId === selectedBranch.id && 
-                  slot.date === selectedDate && 
-                  slot.time === time
-        );
-        if (!isBooked) {
-          slots.push(time);
-        }
+      const time = `${hour.toString().padStart(2, '0')}:00`;
+      const isBooked = BOOKED_SLOTS.some(
+        slot => slot.branchId === selectedBranch.id &&
+          slot.date === selectedDate &&
+          slot.time === time
+      );
+      if (!isBooked) {
+        slots.push(time);
       }
     }
-    
+
     return slots;
   };
 
@@ -206,8 +204,8 @@ function App() {
         <div className="header-content">
           <div className="logo">
             <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-              <rect width="40" height="40" rx="8" fill="var(--color-primary)"/>
-              <path d="M12 20L18 26L28 14" stroke="var(--color-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+              <rect width="40" height="40" rx="8" fill="var(--color-primary)" />
+              <path d="M12 20L18 26L28 14" stroke="var(--color-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span className="logo-text">{t('header.logo')}</span>
           </div>
@@ -231,7 +229,7 @@ function App() {
                 <div className="step-indicator">
                   {index < currentStep ? (
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <path d="M5 10L8 13L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M5 10L8 13L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   ) : (
                     <span>{index + 1}</span>
@@ -242,8 +240,8 @@ function App() {
             ))}
           </div>
           <div className="progress-bar">
-            <div 
-              className="progress-fill" 
+            <div
+              className="progress-fill"
               style={{ width: `${(currentStep / (steps.length - 2)) * 100}%` }}
             />
           </div>
@@ -264,7 +262,7 @@ function App() {
                 {t('step0.description')}
                 <TextToSpeechButton text={t('step0.description')} />
               </p>
-              
+
               <div className="form-grid">
                 <div className="form-group">
                   <label htmlFor="firstName">{t('step0.firstName')} *</label>
@@ -277,7 +275,7 @@ function App() {
                     required
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="lastName">{t('step0.lastName')} *</label>
                   <input
@@ -329,7 +327,7 @@ function App() {
                 {t('step1.description')}
                 <TextToSpeechButton text={t('step1.description')} />
               </p>
-              
+
               <div className="topic-grid">
                 {TOPICS_CONFIG.map((topicConfig) => {
                   const topic = {
@@ -345,8 +343,8 @@ function App() {
                     >
                       <div className="topic-icon">
                         <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                          <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2"/>
-                          <path d="M12 16L15 19L20 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2" />
+                          <path d="M12 16L15 19L20 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </div>
                       <h3 className="topic-name">
@@ -372,7 +370,7 @@ function App() {
                 {t('step2.description')} <strong>{formData.topic?.name}</strong> {t('step2.services')}
                 <TextToSpeechButton text={`${t('step2.description')} ${formData.topic?.name} ${t('step2.services')}`} />
               </p>
-              
+
               <div className="branch-list">
                 {getAvailableBranches().map((branch) => (
                   <div
@@ -417,7 +415,7 @@ function App() {
                 {t('step3.description')} <strong>{formData.branch?.name}</strong>.
                 <TextToSpeechButton text={`${t('step3.description')} ${formData.branch?.name}`} />
               </p>
-              
+
               <div className="datetime-container">
                 <div className="form-group">
                   <label htmlFor="date">{t('step3.dateLabel')} *</label>
@@ -469,12 +467,12 @@ function App() {
             <div className="step-content fade-in confirmation-content">
               <div className="success-icon">
                 <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                  <circle cx="40" cy="40" r="38" fill="var(--color-success)" fillOpacity="0.1"/>
-                  <circle cx="40" cy="40" r="30" fill="var(--color-success)"/>
-                  <path d="M28 40L36 48L52 32" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="40" cy="40" r="38" fill="var(--color-success)" fillOpacity="0.1" />
+                  <circle cx="40" cy="40" r="30" fill="var(--color-success)" />
+                  <path d="M28 40L36 48L52 32" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              
+
               <h2 className="confirmation-title">
                 {t('step4.title')}
                 <TextToSpeechButton text={t('step4.title')} />
@@ -489,7 +487,7 @@ function App() {
                   {t('step4.summaryHeading')}
                   <TextToSpeechButton text={t('step4.summaryHeading')} />
                 </h3>
-                
+
                 <div className="summary-section">
                   <div className="summary-label">{t('step4.contactInfo')}</div>
                   <div className="summary-value">{formData.firstName} {formData.lastName}</div>
@@ -529,7 +527,7 @@ function App() {
               </div>
 
               <div className="confirmation-actions">
-                <button 
+                <button
                   className="btn btn-primary"
                   onClick={() => {
                     setCurrentStep(0);
@@ -560,15 +558,15 @@ function App() {
           {currentStep < steps.length - 1 && (
             <div className="navigation-buttons">
               {currentStep > 0 && (
-                <button 
+                <button
                   className="btn btn-secondary"
                   onClick={handleBack}
                 >
                   {t('buttons.back')}
                 </button>
               )}
-              
-              <button 
+
+              <button
                 className="btn btn-primary"
                 onClick={currentStep === 3 ? handleSubmit : handleNext}
                 disabled={!canProceed()}

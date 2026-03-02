@@ -3,7 +3,7 @@
     "title": "Reserva de Citas",
     "logo": "Commerce Bank"
   },
-    "login": {
+  "login": {
     "title": "Iniciar Sesión",
     "description": "Ingrese sus credenciales para acceder a la reserva de citas.",
     "email": "Correo o Usuario",
@@ -51,7 +51,7 @@
     "description": "Seleccione un horario de cita disponible en",
     "dateLabel": "Fecha de la Cita",
     "dateHint": "Disponible de lunes a sábado",
-    "timeLabel": "Horarios Disponibles (30 minutos cada uno)",
+    "timeLabel": "Horarios Disponibles (1 hora cada uno)",
     "noSlots": "No hay horarios disponibles para esta fecha. Por favor seleccione otra fecha."
   },
   "step4": {
