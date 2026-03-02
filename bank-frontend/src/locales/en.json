@@ -51,7 +51,7 @@
     "description": "Select an available appointment slot at",
     "dateLabel": "Appointment Date",
     "dateHint": "Available Monday through Saturday",
-    "timeLabel": "Available Time Slots (30 minutes each)",
+    "timeLabel": "Available Time Slots (1 hour each)",
     "noSlots": "No available slots for this date. Please select another date."
   },
   "step4": {
