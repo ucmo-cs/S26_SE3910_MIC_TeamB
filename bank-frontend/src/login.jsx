@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import TextToSpeechButton from './components/TextToSpeechButton';
+import SettingsMenu from './components/SettingsMenu';
+import SpokenText from './components/SpokenText';
+import { useTts } from './context/useTts';
 import { loginApi, registerApi } from './api';
 import './login.css';
 
 const Login = ({ onLogin }) => {
   const { t } = useTranslation();
+  const { speak } = useTts();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -52,6 +55,9 @@ const Login = ({ onLogin }) => {
 
   return (
     <div className="login-page">
+      <div className="login-settings-bar">
+        <SettingsMenu />
+      </div>
       <div className="login-card">
         <div className="login-header">
           <div className="login-logo">
@@ -62,12 +68,18 @@ const Login = ({ onLogin }) => {
             <span className="login-logo-text">{t('header.logo')}</span>
           </div>
           <h1 className="login-title">
-            {isRegistering ? t('login.titleRegister') : t('login.title')}
-            <TextToSpeechButton text={isRegistering ? t('login.titleRegister') : t('login.title')} />
+            <SpokenText
+              text={isRegistering ? t('login.titleRegister') : t('login.title')}
+            />
           </h1>
           <p className="login-description">
-            {isRegistering ? t('login.descriptionRegister') : t('login.description')}
-            <TextToSpeechButton text={isRegistering ? t('login.descriptionRegister') : t('login.description')} />
+            <SpokenText
+              text={
+                isRegistering
+                  ? t('login.descriptionRegister')
+                  : t('login.description')
+              }
+            />
           </p>
         </div>
 
@@ -117,7 +129,16 @@ const Login = ({ onLogin }) => {
               required
             />
           </div>
-          <button type="submit" className="btn btn-primary login-submit" disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary login-submit"
+            disabled={loading}
+            onClick={() =>
+              speak(
+                isRegistering ? t('login.submitRegister') : t('login.submit')
+              )
+            }
+          >
             {loading
               ? '...'
               : isRegistering
@@ -130,7 +151,13 @@ const Login = ({ onLogin }) => {
           <button
             type="button"
             className="login-switch-link"
-            onClick={() => { setIsRegistering(!isRegistering); setError(''); }}
+            onClick={() => {
+              speak(
+                isRegistering ? t('login.switchToLogin') : t('login.switchToRegister')
+              );
+              setIsRegistering(!isRegistering);
+              setError('');
+            }}
           >
             {isRegistering ? t('login.switchToLogin') : t('login.switchToRegister')}
           </button>

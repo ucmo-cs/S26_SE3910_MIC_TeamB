@@ -4,6 +4,35 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-xl);
+  position: relative;
+}
+
+.login-settings-bar {
+  position: fixed;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  z-index: 20;
+}
+
+.login-settings-bar .settings-button {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.login-settings-bar .settings-button:hover {
+  background: var(--color-background);
+  transform: rotate(90deg) scale(1.05);
+}
+
+.login-settings-bar .settings-button:active {
+  transform: rotate(90deg) scale(0.95);
+}
+
+.login-settings-bar .settings-button:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .login-card {

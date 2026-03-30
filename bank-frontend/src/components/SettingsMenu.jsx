@@ -1,10 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import LanguageToggle from './LanguageToggle';
+import { useTts } from '../context/useTts';
 import './SettingsMenu.css';
 
 const SettingsMenu = ({ onLogout }) => {
   const { t } = useTranslation();
+  const { enabled, setEnabled, isSupported } = useTts();
+  const ttsToggleLabelId = useId();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
@@ -21,6 +24,12 @@ const SettingsMenu = ({ onLogout }) => {
       }
     };
 
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleEscape);
@@ -31,12 +40,6 @@ const SettingsMenu = ({ onLogout }) => {
       document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen]);
-
-  const handleEscape = (event) => {
-    if (event.key === 'Escape') {
-      setIsOpen(false);
-    }
-  };
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
@@ -88,6 +91,23 @@ const SettingsMenu = ({ onLogout }) => {
             <h3 className="settings-dropdown-title">{t('settings.title')}</h3>
           </div>
           <div className="settings-dropdown-content">
+            {isSupported && (
+              <div className="tts-toggle-row">
+                <span className="tts-toggle-label" id={ttsToggleLabelId}>
+                  {t('settings.textToSpeech')}
+                </span>
+                <button
+                  type="button"
+                  className={`tts-switch ${enabled ? 'on' : ''}`}
+                  role="switch"
+                  aria-checked={enabled}
+                  aria-labelledby={ttsToggleLabelId}
+                  onClick={() => setEnabled((v) => !v)}
+                >
+                  <span className="tts-switch-thumb" />
+                </button>
+              </div>
+            )}
             <LanguageToggle />
             {onLogout && (
               <button

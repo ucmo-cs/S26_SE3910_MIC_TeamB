@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsMenu from './components/SettingsMenu';
-import TextToSpeechButton from './components/TextToSpeechButton';
+import SpokenText from './components/SpokenText';
 import Login from './login';
 import { fetchBranches, fetchTopics } from './api';
+import { useTts } from './context/useTts';
 
 import './App.css';
 
@@ -18,6 +19,7 @@ const BOOKED_SLOTS = [
 
 function App() {
   const { t, i18n } = useTranslation();
+  const { speak, enabled } = useTts();
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem(USER_STORAGE_KEY);
@@ -41,7 +43,6 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
-    setDataLoading(true);
     Promise.all([fetchBranches(), fetchTopics()])
       .then(([branchData, topicData]) => {
         setBranches(branchData);
@@ -63,8 +64,43 @@ function App() {
     time: '',
   });
 
+  const getAppointmentSummarySpeech = useCallback(() => {
+    const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
+    const dateStr = formData.date
+      ? new Date(formData.date + 'T00:00:00').toLocaleDateString(locale, {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : '';
+    return [
+      t('step4.contactInfo'),
+      `${formData.firstName} ${formData.lastName}`,
+      formData.email,
+      formData.phone,
+      t('step4.appointmentType'),
+      formData.topic?.name,
+      t('step4.location'),
+      formData.branch?.name,
+      formData.branch?.address,
+      t('step4.dateTime'),
+      dateStr,
+      formData.time,
+    ]
+      .filter(Boolean)
+      .join('. ');
+  }, [formData, i18n.language, t]);
+
   if (!user) {
-    return <Login onLogin={setUser} />;
+    return (
+      <Login
+        onLogin={(u) => {
+          setDataLoading(true);
+          setUser(u);
+        }}
+      />
+    );
   }
 
   if (dataLoading) {
@@ -191,8 +227,7 @@ function App() {
             <span className="logo-text">{t('header.logo')}</span>
           </div>
           <div className="header-title">
-            {t('header.title')}
-            <TextToSpeechButton text={t('header.title')} />
+            <SpokenText text={t('header.title')} />
           </div>
           <div className="header-right">
             <span className="header-welcome">{t('login.welcome', { name: user.displayName })}</span>
@@ -216,7 +251,9 @@ function App() {
                     <span>{index + 1}</span>
                   )}
                 </div>
-                <div className="step-label">{step}</div>
+                <div className="step-label">
+                  <SpokenText text={step} />
+                </div>
               </div>
             ))}
           </div>
@@ -236,12 +273,10 @@ function App() {
           {currentStep === 0 && (
             <div className="step-content fade-in">
               <h2 className="step-title">
-                {t('step0.title')}
-                <TextToSpeechButton text={t('step0.title')} />
+                <SpokenText text={t('step0.title')} />
               </h2>
               <p className="step-description">
-                {t('step0.description')}
-                <TextToSpeechButton text={t('step0.description')} />
+                <SpokenText text={t('step0.description')} />
               </p>
 
               <div className="form-grid">
@@ -301,12 +336,10 @@ function App() {
           {currentStep === 1 && (
             <div className="step-content fade-in">
               <h2 className="step-title">
-                {t('step1.title')}
-                <TextToSpeechButton text={t('step1.title')} />
+                <SpokenText text={t('step1.title')} />
               </h2>
               <p className="step-description">
-                {t('step1.description')}
-                <TextToSpeechButton text={t('step1.description')} />
+                <SpokenText text={t('step1.description')} />
               </p>
 
               <div className="topic-grid">
@@ -320,7 +353,10 @@ function App() {
                     <div
                       key={topic.id}
                       className={`topic-card ${formData.topic?.id === topic.id ? 'selected' : ''}`}
-                      onClick={() => setFormData({ ...formData, topic, branch: null })}
+                      onClick={() => {
+                        setFormData({ ...formData, topic, branch: null });
+                        speak(`${topic.name}. ${topic.description}`);
+                      }}
                     >
                       <div className="topic-icon">
                         <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -328,10 +364,7 @@ function App() {
                           <path d="M12 16L15 19L20 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </div>
-                      <h3 className="topic-name">
-                        {topic.name}
-                        <TextToSpeechButton text={topic.name} />
-                      </h3>
+                      <h3 className="topic-name">{topic.name}</h3>
                       <p className="topic-description">{topic.description}</p>
                     </div>
                   );
@@ -344,12 +377,14 @@ function App() {
           {currentStep === 2 && (
             <div className="step-content fade-in">
               <h2 className="step-title">
-                {t('step2.title')}
-                <TextToSpeechButton text={t('step2.title')} />
+                <SpokenText text={t('step2.title')} />
               </h2>
               <p className="step-description">
-                {t('step2.description')} <strong>{formData.topic?.name}</strong> {t('step2.services')}
-                <TextToSpeechButton text={`${t('step2.description')} ${formData.topic?.name} ${t('step2.services')}`} />
+                <SpokenText
+                  text={`${t('step2.description')} ${formData.topic?.name} ${t('step2.services')}`}
+                >
+                  {t('step2.description')} <strong>{formData.topic?.name}</strong> {t('step2.services')}
+                </SpokenText>
               </p>
 
               <div className="branch-list">
@@ -357,13 +392,15 @@ function App() {
                   <div
                     key={branch.id}
                     className={`branch-card ${formData.branch?.id === branch.id ? 'selected' : ''}`}
-                    onClick={() => setFormData({ ...formData, branch, date: '', time: '' })}
+                    onClick={() => {
+                      setFormData({ ...formData, branch, date: '', time: '' });
+                      speak(
+                        `${branch.name}. ${branch.address}. ${t('step2.weekday')} ${branch.weekdayHours}. ${t('step2.saturday')} ${branch.saturdayHours}`
+                      );
+                    }}
                   >
                     <div className="branch-header">
-                      <h3 className="branch-name">
-                        {branch.name}
-                        <TextToSpeechButton text={branch.name} />
-                      </h3>
+                      <h3 className="branch-name">{branch.name}</h3>
                       <div className={`branch-radio ${formData.branch?.id === branch.id ? 'checked' : ''}`}>
                         {formData.branch?.id === branch.id && <div className="radio-dot" />}
                       </div>
@@ -389,17 +426,21 @@ function App() {
           {currentStep === 3 && (
             <div className="step-content fade-in">
               <h2 className="step-title">
-                {t('step3.title')}
-                <TextToSpeechButton text={t('step3.title')} />
+                <SpokenText text={t('step3.title')} />
               </h2>
               <p className="step-description">
-                {t('step3.description')} <strong>{formData.branch?.name}</strong>.
-                <TextToSpeechButton text={`${t('step3.description')} ${formData.branch?.name}`} />
+                <SpokenText text={`${t('step3.description')} ${formData.branch?.name}`}>
+                  {t('step3.description')} <strong>{formData.branch?.name}</strong>.
+                </SpokenText>
               </p>
 
               <div className="datetime-container">
                 <div className="form-group">
-                  <label htmlFor="date">{t('step3.dateLabel')} *</label>
+                  <label htmlFor="date">
+                    <SpokenText text={t('step3.dateLabel')}>
+                      {t('step3.dateLabel')} *
+                    </SpokenText>
+                  </label>
                   <input
                     type="date"
                     id="date"
@@ -409,14 +450,17 @@ function App() {
                     max={getMaxDate()}
                     required
                   />
-                  <p className="input-hint">{t('step3.dateHint')}</p>
+                  <p className="input-hint">
+                    <SpokenText text={t('step3.dateHint')} />
+                  </p>
                 </div>
 
                 {formData.date && (
                   <div className="time-slots-section">
                     <label>
-                      {t('step3.timeLabel')} *
-                      <TextToSpeechButton text={t('step3.timeLabel')} />
+                      <SpokenText text={t('step3.timeLabel')}>
+                        {t('step3.timeLabel')} *
+                      </SpokenText>
                     </label>
                     <div className="time-slots-grid">
                       {generateTimeSlots(formData.date, formData.branch).length > 0 ? (
@@ -425,15 +469,17 @@ function App() {
                             key={time}
                             type="button"
                             className={`time-slot ${formData.time === time ? 'selected' : ''}`}
-                            onClick={() => setFormData({ ...formData, time })}
+                            onClick={() => {
+                              speak(time);
+                              setFormData({ ...formData, time });
+                            }}
                           >
                             {time}
                           </button>
                         ))
                       ) : (
                         <p className="no-slots">
-                          {t('step3.noSlots')}
-                          <TextToSpeechButton text={t('step3.noSlots')} />
+                          <SpokenText text={t('step3.noSlots')} />
                         </p>
                       )}
                     </div>
@@ -455,19 +501,39 @@ function App() {
               </div>
 
               <h2 className="confirmation-title">
-                {t('step4.title')}
-                <TextToSpeechButton text={t('step4.title')} />
+                <SpokenText text={t('step4.title')} />
               </h2>
               <p className="confirmation-message">
-                {t('step4.message')} <strong>{formData.email}</strong>.
-                <TextToSpeechButton text={`${t('step4.message')} ${formData.email}`} />
+                <SpokenText text={`${t('step4.message')} ${formData.email}`}>
+                  {t('step4.message')} <strong>{formData.email}</strong>.
+                </SpokenText>
               </p>
 
-              <div className="appointment-summary">
-                <h3 className="summary-heading">
-                  {t('step4.summaryHeading')}
-                  <TextToSpeechButton text={t('step4.summaryHeading')} />
-                </h3>
+              <div
+                className={`appointment-summary${enabled ? ' tts-clickable' : ''}`}
+                onClick={
+                  enabled
+                    ? (e) => {
+                        e.stopPropagation();
+                        speak(getAppointmentSummarySpeech());
+                      }
+                    : undefined
+                }
+                onKeyDown={
+                  enabled
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          speak(getAppointmentSummarySpeech());
+                        }
+                      }
+                    : undefined
+                }
+                role={enabled ? 'button' : undefined}
+                tabIndex={enabled ? 0 : undefined}
+                aria-label={enabled ? t('accessibility.clickToHear') : undefined}
+              >
+                <h3 className="summary-heading">{t('step4.summaryHeading')}</h3>
 
                 <div className="summary-section">
                   <div className="summary-label">{t('step4.contactInfo')}</div>
@@ -511,6 +577,7 @@ function App() {
                 <button
                   className="btn btn-primary"
                   onClick={() => {
+                    speak(t('step4.bookAnother'));
                     setCurrentStep(0);
                     setFormData({
                       firstName: '',
@@ -529,8 +596,7 @@ function App() {
               </div>
 
               <p className="confirmation-note">
-                {t('step4.note')}
-                <TextToSpeechButton text={t('step4.note')} />
+                <SpokenText text={t('step4.note')} />
               </p>
             </div>
           )}
@@ -541,7 +607,10 @@ function App() {
               {currentStep > 0 && (
                 <button
                   className="btn btn-secondary"
-                  onClick={handleBack}
+                  onClick={() => {
+                    speak(t('buttons.back'));
+                    handleBack();
+                  }}
                 >
                   {t('buttons.back')}
                 </button>
@@ -549,7 +618,15 @@ function App() {
 
               <button
                 className="btn btn-primary"
-                onClick={currentStep === 3 ? handleSubmit : handleNext}
+                onClick={() => {
+                  if (currentStep === 3) {
+                    speak(t('buttons.confirm'));
+                    handleSubmit();
+                  } else {
+                    speak(t('buttons.continue'));
+                    handleNext();
+                  }
+                }}
                 disabled={!canProceed()}
               >
                 {currentStep === 3 ? t('buttons.confirm') : t('buttons.continue')}
@@ -561,8 +638,12 @@ function App() {
 
       {/* Footer */}
       <footer className="app-footer">
-        <p>{t('footer.copyright')}</p>
-        <p className="footer-note">{t('footer.help')}</p>
+        <p>
+          <SpokenText text={t('footer.copyright')} />
+        </p>
+        <p className="footer-note">
+          <SpokenText text={t('footer.help')} />
+        </p>
       </footer>
     </div>
   );

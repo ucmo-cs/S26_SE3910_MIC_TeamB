@@ -110,9 +110,11 @@
   },
   "settings": {
     "title": "Configuración",
-    "language": "Idioma"
+    "language": "Idioma",
+    "textToSpeech": "Texto a voz"
   },
   "accessibility": {
-    "readAloud": "Leer en voz alta"
+    "readAloud": "Leer en voz alta",
+    "clickToHear": "Haga clic para escuchar este texto"
   }
 }
