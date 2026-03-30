@@ -110,9 +110,11 @@
   },
   "settings": {
     "title": "Settings",
-    "language": "Language"
+    "language": "Language",
+    "textToSpeech": "Text to speech"
   },
   "accessibility": {
-    "readAloud": "Read aloud"
+    "readAloud": "Read aloud",
+    "clickToHear": "Click to hear this text"
   }
 }
