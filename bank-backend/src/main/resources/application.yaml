@@ -20,3 +20,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+jwt:
+  # Base64-encoded signing key for local/dev only.
+  secret: dGhpc0lzQVNlY3VyZUJhc2U2NEVuY29kZWRLZXlGb3JKV1RBdXRo
+  expiration: 86400000

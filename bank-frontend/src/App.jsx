@@ -3,57 +3,11 @@ import { useTranslation } from 'react-i18next';
 import SettingsMenu from './components/SettingsMenu';
 import TextToSpeechButton from './components/TextToSpeechButton';
 import Login from './login';
+import { fetchBranches, fetchTopics } from './api';
 
 import './App.css';
 
 const USER_STORAGE_KEY = 'bank-app-user';
-
-// Topics will be translated in the component using i18n
-const TOPICS_CONFIG = [
-  { id: 1, key: 'checkingAccount' },
-  { id: 2, key: 'savingsAccount' }, // td
-  { id: 3, key: 'cdsMoneyMarket' },
-  { id: 4, key: 'studentBanking' },
-  { id: 5, key: 'autoLoans' },
-  { id: 6, key: 'homeEquity' },
-  { id: 7, key: 'mortgage' },
-  { id: 8, key: 'studentLoans' },
-  { id: 9, key: 'retirement' },
-  { id: 10, key: 'investmentAccount' },
-  { id: 11, key: 'creditCard' },
-  { id: 12, key: 'other' },
-];
-
-const BRANCHES = [
-  {
-    id: 1,
-    name: 'Raytown',
-    address: '6705 Blue Ridge Blvd, Raytown, MO 64133',
-    topics: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    businessHours: { weekday: '8:30 AM – 5:30 PM', saturday: 'Closed' }
-  },
-  {
-    id: 2,
-    name: 'Woods Chapel',
-    address: '750 NE Woods Chapel Rd, Lee\'s Summit, MO 64064',
-    topics: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    businessHours: { weekday: '8:30 AM – 5:30 PM', saturday: 'Closed' }
-  },
-  {
-    id: 3,
-    name: 'Blue Hills',
-    address: '6100 Troost Ave, Kansas City, MO 64110',
-    topics: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    businessHours: { weekday: '8:30 AM – 5:30 PM', saturday: 'Closed' }
-  },
-  {
-    id: 4,
-    name: 'Grandview',
-    address: '12829 U.S. 71 Frontage, Grandview, MO 64030',
-    topics: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    businessHours: { weekday: '8:30 AM – 5:30 PM', saturday: 'Closed' }
-  },
-];
 
 // Mock booked appointments - will come from database later
 const BOOKED_SLOTS = [
@@ -73,6 +27,10 @@ function App() {
     }
   });
 
+  const [branches, setBranches] = useState([]);
+  const [topics, setTopics] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
+
   useEffect(() => {
     if (user) {
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
@@ -81,7 +39,22 @@ function App() {
     }
   }, [user]);
 
-  const handleLogout = () => setUser(null);
+  useEffect(() => {
+    if (!user) return;
+    setDataLoading(true);
+    Promise.all([fetchBranches(), fetchTopics()])
+      .then(([branchData, topicData]) => {
+        setBranches(branchData);
+        setTopics(topicData);
+      })
+      .catch((err) => console.error('Failed to load data:', err))
+      .finally(() => setDataLoading(false));
+  }, [user]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('bank-app-token');
+    setUser(null);
+  };
 
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -92,6 +65,14 @@ function App() {
 
   if (!user) {
     return <Login onLogin={setUser} />;
+  }
+
+  if (dataLoading) {
+    return (
+      <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <p>{t('loading', 'Loading...')}</p>
+      </div>
+    );
   }
 
   const steps = [
@@ -135,7 +116,7 @@ function App() {
   // Filter branches based on selected topic
   const getAvailableBranches = () => {
     if (!formData.topic) return [];
-    return BRANCHES.filter(branch => branch.topics.includes(formData.topic.id));
+    return branches;
   };
 
   // Get minimum selectable date (tomorrow)
@@ -329,7 +310,7 @@ function App() {
               </p>
 
               <div className="topic-grid">
-                {TOPICS_CONFIG.map((topicConfig) => {
+                {topics.map((topicConfig) => {
                   const topic = {
                     id: topicConfig.id,
                     name: t(`topics.${topicConfig.key}`),
@@ -391,11 +372,11 @@ function App() {
                     <div className="branch-hours">
                       <div className="hours-row">
                         <span className="hours-label">{t('step2.weekday')}</span>
-                        <span className="hours-value">{branch.businessHours.weekday}</span>
+                        <span className="hours-value">{branch.weekdayHours}</span>
                       </div>
                       <div className="hours-row">
                         <span className="hours-label">{t('step2.saturday')}</span>
-                        <span className="hours-value">{branch.businessHours.saturday}</span>
+                        <span className="hours-value">{branch.saturdayHours}</span>
                       </div>
                     </div>
                   </div>

@@ -86,3 +86,22 @@
   color: var(--color-text-light);
   text-align: center;
 }
+
+.login-switch-link {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.login-switch-link:hover {
+  color: var(--color-primary-dark, #1a365d);
+}
+
+.login-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

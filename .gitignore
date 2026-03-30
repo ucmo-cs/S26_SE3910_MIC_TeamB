@@ -1,0 +1,19 @@
+# Java
+bank-backend/target/
+*.class
+
+# Node
+bank-frontend/node_modules/
+bank-frontend/dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
