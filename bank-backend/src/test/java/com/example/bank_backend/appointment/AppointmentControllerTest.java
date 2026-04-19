@@ -7,18 +7,24 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.example.bank_backend.auth.JwtUtil;
+import com.example.bank_backend.auth.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AppointmentController.class)
+@WithMockUser
 class AppointmentControllerTest {
 
     @Autowired
@@ -26,6 +32,12 @@ class AppointmentControllerTest {
 
     @MockitoBean
     private AppointmentService appointmentService;
+
+    @MockitoBean
+    private JwtUtil jwtUtil;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     private ObjectMapper objectMapper;
 
@@ -61,6 +73,7 @@ class AppointmentControllerTest {
         when(appointmentService.bookAppointment(any(AppointmentDTO.class))).thenReturn(sampleDTO());
 
         mockMvc.perform(post("/api/appointments")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(sampleDTO())))
                 .andExpect(status().isCreated())
@@ -166,7 +179,8 @@ class AppointmentControllerTest {
         cancelled.setStatus(AppointmentStatus.CANCELLED);
         when(appointmentService.cancelAppointment(1L)).thenReturn(cancelled);
 
-        mockMvc.perform(put("/api/appointments/1/cancel"))
+        mockMvc.perform(put("/api/appointments/1/cancel")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELLED"));
     }
@@ -176,7 +190,8 @@ class AppointmentControllerTest {
         when(appointmentService.cancelAppointment(99L))
                 .thenThrow(new AppointmentNotFoundException(99L));
 
-        mockMvc.perform(put("/api/appointments/99/cancel"))
+        mockMvc.perform(put("/api/appointments/99/cancel")
+                        .with(csrf()))
                 .andExpect(status().isNotFound());
     }
 
@@ -192,6 +207,7 @@ class AppointmentControllerTest {
         when(appointmentService.rescheduleAppointment(eq(1L), any(LocalDateTime.class))).thenReturn(rescheduled);
 
         mockMvc.perform(put("/api/appointments/1/reschedule")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(newTime)))
                 .andExpect(status().isOk())
@@ -208,7 +224,8 @@ class AppointmentControllerTest {
         completed.setStatus(AppointmentStatus.COMPLETED);
         when(appointmentService.completeAppointment(1L)).thenReturn(completed);
 
-        mockMvc.perform(put("/api/appointments/1/complete"))
+        mockMvc.perform(put("/api/appointments/1/complete")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("COMPLETED"));
     }
@@ -218,7 +235,8 @@ class AppointmentControllerTest {
         when(appointmentService.completeAppointment(99L))
                 .thenThrow(new AppointmentNotFoundException(99L));
 
-        mockMvc.perform(put("/api/appointments/99/complete"))
+        mockMvc.perform(put("/api/appointments/99/complete")
+                        .with(csrf()))
                 .andExpect(status().isNotFound());
     }
 }

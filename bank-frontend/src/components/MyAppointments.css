@@ -1,0 +1,386 @@
+/* ------------------------------------------------------------------ */
+/*  My Appointments – View / Cancel / Reschedule                      */
+/* ------------------------------------------------------------------ */
+
+.my-appointments {
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+.my-appointments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2xl);
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.my-appointments-title {
+  font-size: 2rem;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+}
+
+.my-appointments-subtitle {
+  font-size: 1.125rem;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-xs);
+}
+
+/* Appointment cards list */
+.appointments-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.appointment-card {
+  padding: var(--space-xl);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.appointment-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-primary);
+  transition: width var(--transition-base);
+}
+
+.appointment-card.status-CANCELLED::before {
+  background: var(--color-error);
+}
+
+.appointment-card.status-COMPLETED::before {
+  background: var(--color-success);
+}
+
+.appointment-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-accent);
+}
+
+.appointment-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-lg);
+  gap: var(--space-md);
+}
+
+.appointment-card-info {
+  flex: 1;
+}
+
+.appointment-card-date {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.appointment-card-time {
+  font-size: 1rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* Status badges */
+.status-badge {
+  padding: var(--space-xs) var(--space-md);
+  border-radius: 100px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.status-badge.SCHEDULED {
+  background: rgba(26, 77, 46, 0.1);
+  color: var(--color-primary);
+}
+
+.status-badge.CANCELLED {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--color-error);
+}
+
+.status-badge.COMPLETED {
+  background: rgba(45, 106, 79, 0.1);
+  color: var(--color-success);
+}
+
+.appointment-card-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detail-value {
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+/* Action buttons row */
+.appointment-card-actions {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.btn-cancel {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 2px solid var(--color-error);
+  background: white;
+  color: var(--color-error);
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: var(--color-error);
+  color: white;
+}
+
+.btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-reschedule {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 2px solid var(--color-primary);
+  background: white;
+  color: var(--color-primary);
+}
+
+.btn-reschedule:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-reschedule:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Reschedule inline form */
+.reschedule-form {
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-primary);
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.reschedule-form-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: var(--space-md);
+}
+
+.reschedule-fields {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: var(--space-md);
+}
+
+.reschedule-fields .form-group {
+  flex: 1;
+  min-width: 180px;
+}
+
+.reschedule-fields .form-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xs);
+  display: block;
+}
+
+.reschedule-fields .form-group input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-family: var(--font-body);
+  transition: all var(--transition-base);
+  background: white;
+}
+
+.reschedule-fields .form-group input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(26, 77, 46, 0.1);
+}
+
+.reschedule-time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.reschedule-time-btn {
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-family: var(--font-body);
+}
+
+.reschedule-time-btn:hover {
+  border-color: var(--color-accent);
+  background: var(--color-background);
+}
+
+.reschedule-time-btn.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: white;
+}
+
+.reschedule-actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+/* Empty state */
+.appointments-empty {
+  text-align: center;
+  padding: var(--space-3xl) var(--space-xl);
+}
+
+.appointments-empty-icon {
+  margin-bottom: var(--space-xl);
+  color: var(--color-text-light);
+}
+
+.appointments-empty h3 {
+  font-size: 1.5rem;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-md);
+}
+
+.appointments-empty p {
+  font-size: 1.0625rem;
+  color: var(--color-text-secondary);
+  max-width: 400px;
+  margin: 0 auto var(--space-xl);
+}
+
+/* Loading state */
+.appointments-loading {
+  text-align: center;
+  padding: var(--space-3xl);
+  color: var(--color-text-secondary);
+  font-size: 1.0625rem;
+}
+
+/* Error state */
+.appointments-error {
+  text-align: center;
+  padding: var(--space-2xl);
+  color: var(--color-error);
+  background: rgba(220, 38, 38, 0.05);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(220, 38, 38, 0.15);
+}
+
+/* Section dividers */
+.appointments-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.appointments-section-title:not(:first-child) {
+  margin-top: var(--space-2xl);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .my-appointments-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .my-appointments-title {
+    font-size: 1.75rem;
+  }
+
+  .appointment-card-header {
+    flex-direction: column;
+  }
+
+  .appointment-card-details {
+    grid-template-columns: 1fr;
+  }
+
+  .reschedule-fields {
+    flex-direction: column;
+  }
+
+  .appointment-card-actions {
+    flex-direction: column;
+  }
+
+  .appointment-card-actions .btn-cancel,
+  .appointment-card-actions .btn-reschedule {
+    width: 100%;
+  }
+}

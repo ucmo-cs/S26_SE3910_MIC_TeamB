@@ -2,20 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsMenu from './components/SettingsMenu';
 import SpokenText from './components/SpokenText';
+import MyAppointments from './components/MyAppointments';
 import Login from './login';
-import { fetchBranches, fetchTopics } from './api';
+import { fetchBranches, fetchTopics, bookAppointment, fetchAppointmentsByBranch } from './api';
 import { useTts } from './context/useTts';
 
 import './App.css';
 
 const USER_STORAGE_KEY = 'bank-app-user';
-
-// Mock booked appointments - will come from database later
-const BOOKED_SLOTS = [
-  { branchId: 1, date: '2026-02-05', time: '10:00' },
-  { branchId: 1, date: '2026-02-05', time: '14:00' },
-  { branchId: 2, date: '2026-02-06', time: '11:00' },
-];
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -32,6 +26,9 @@ function App() {
   const [branches, setBranches] = useState([]);
   const [topics, setTopics] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
+
+  // View toggle: 'booking' or 'appointments'
+  const [view, setView] = useState('booking');
 
   useEffect(() => {
     if (user) {
@@ -60,9 +57,27 @@ function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     firstName: '',
-    // ...
+    lastName: '',
+    email: '',
+    phone: '',
+    topic: null,
+    branch: null,
+    date: '',
     time: '',
   });
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState('');
+
+  // Time-slot availability state
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+
+  // Pre-fill email from user when user changes
+  useEffect(() => {
+    if (user?.email) {
+      setFormData((prev) => ({ ...prev, email: user.email }));
+    }
+  }, [user]);
 
   const getAppointmentSummarySpeech = useCallback(() => {
     const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
@@ -119,7 +134,7 @@ function App() {
     t('steps.confirmation')
   ];
 
-  // Generate available time slots
+  // Generate available time slots using real backend data
   const generateTimeSlots = (selectedDate, selectedBranch) => {
     if (!selectedDate || !selectedBranch) return [];
 
@@ -131,15 +146,16 @@ function App() {
     if (isSunday) return [];
 
     const slots = [];
-    const startHour = isSaturday ? 9 : 9;
+    const startHour = 9;
     const endHour = isSaturday ? 13 : 17;
 
     for (let hour = startHour; hour < endHour; hour++) {
       const time = `${hour.toString().padStart(2, '0')}:00`;
-      const isBooked = BOOKED_SLOTS.some(
-        slot => slot.branchId === selectedBranch.id &&
-          slot.date === selectedDate &&
-          slot.time === time
+      const isBooked = bookedSlots.some(
+        (slot) =>
+          slot.status === 'SCHEDULED' &&
+          slot.appointmentDateTime.startsWith(selectedDate) &&
+          slot.appointmentDateTime.substring(11, 16) === time
       );
       if (!isBooked) {
         slots.push(time);
@@ -147,6 +163,21 @@ function App() {
     }
 
     return slots;
+  };
+
+  // Fetch booked slots from backend when date or branch changes
+  const loadBookedSlots = async (branchId) => {
+    if (!branchId) return;
+    setSlotsLoading(true);
+    try {
+      const data = await fetchAppointmentsByBranch(branchId);
+      setBookedSlots(data);
+    } catch (err) {
+      console.error('Failed to load booked slots:', err);
+      setBookedSlots([]);
+    } finally {
+      setSlotsLoading(false);
+    }
   };
 
   // Filter branches based on selected topic
@@ -181,10 +212,24 @@ function App() {
     }
   };
 
-  const handleSubmit = () => {
-    // This will call the backend API later
-    console.log('Booking appointment:', formData);
-    handleNext();
+  const handleSubmit = async () => {
+    setBookingLoading(true);
+    setBookingError('');
+    try {
+      const dto = {
+        customerName: `${formData.firstName} ${formData.lastName}`,
+        customerEmail: formData.email,
+        branchId: formData.branch.id,
+        topicId: formData.topic.id,
+        appointmentDateTime: `${formData.date}T${formData.time}:00`,
+      };
+      await bookAppointment(dto);
+      handleNext();
+    } catch (err) {
+      setBookingError(err.message || 'Failed to book appointment. Please try again.');
+    } finally {
+      setBookingLoading(false);
+    }
   };
 
   const canProceed = () => {
@@ -214,6 +259,22 @@ function App() {
     setFormData({ ...formData, phone: formatted });
   };
 
+  const resetForm = () => {
+    setCurrentStep(0);
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: user?.email || '',
+      phone: '',
+      topic: null,
+      branch: null,
+      date: '',
+      time: '',
+    });
+    setBookingError('');
+    setBookedSlots([]);
+  };
+
   return (
     <div className="app-container">
       {/* Header */}
@@ -230,411 +291,453 @@ function App() {
             <SpokenText text={t('header.title')} />
           </div>
           <div className="header-right">
+            <button
+              className={`header-nav-btn ${view === 'booking' ? 'active' : ''}`}
+              onClick={() => { setView('booking'); }}
+            >
+              Book Appointment
+            </button>
+            <button
+              className={`header-nav-btn ${view === 'appointments' ? 'active' : ''}`}
+              onClick={() => { setView('appointments'); }}
+            >
+              My Appointments
+            </button>
             <span className="header-welcome">{t('login.welcome', { name: user.displayName })}</span>
             <SettingsMenu onLogout={handleLogout} />
           </div>
         </div>
       </header>
 
-      {/* Progress Bar */}
-      {currentStep < steps.length - 1 && (
-        <div className="progress-container">
-          <div className="progress-steps">
-            {steps.slice(0, -1).map((step, index) => (
-              <div key={index} className={`progress-step ${index <= currentStep ? 'active' : ''} ${index < currentStep ? 'completed' : ''}`}>
-                <div className="step-indicator">
-                  {index < currentStep ? (
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <path d="M5 10L8 13L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  ) : (
-                    <span>{index + 1}</span>
-                  )}
-                </div>
-                <div className="step-label">
-                  <SpokenText text={step} />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${(currentStep / (steps.length - 2)) * 100}%` }}
+      {/* My Appointments View */}
+      {view === 'appointments' && (
+        <main className="main-content">
+          <div className="content-card">
+            <MyAppointments
+              userEmail={user.email}
+              branches={branches}
+              topics={topics}
+              onBackToBooking={() => { resetForm(); setView('booking'); }}
             />
           </div>
-        </div>
+        </main>
       )}
 
-      {/* Main Content */}
-      <main className="main-content">
-        <div className="content-card">
-          {/* Step 0: Personal Information */}
-          {currentStep === 0 && (
-            <div className="step-content fade-in">
-              <h2 className="step-title">
-                <SpokenText text={t('step0.title')} />
-              </h2>
-              <p className="step-description">
-                <SpokenText text={t('step0.description')} />
-              </p>
-
-              <div className="form-grid">
-                <div className="form-group">
-                  <label htmlFor="firstName">{t('step0.firstName')} *</label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    placeholder={t('step0.firstNamePlaceholder')}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="lastName">{t('step0.lastName')} *</label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    placeholder={t('step0.lastNamePlaceholder')}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="email">{t('step0.email')} *</label>
-                <input
-                  type="email"
-                  id="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder={t('step0.emailPlaceholder')}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="phone">{t('step0.phone')} *</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  value={formData.phone}
-                  onChange={handlePhoneChange}
-                  placeholder={t('step0.phonePlaceholder')}
-                  maxLength="14"
-                  required
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Step 1: Select Topic */}
-          {currentStep === 1 && (
-            <div className="step-content fade-in">
-              <h2 className="step-title">
-                <SpokenText text={t('step1.title')} />
-              </h2>
-              <p className="step-description">
-                <SpokenText text={t('step1.description')} />
-              </p>
-
-              <div className="topic-grid">
-                {topics.map((topicConfig) => {
-                  const topic = {
-                    id: topicConfig.id,
-                    name: t(`topics.${topicConfig.key}`),
-                    description: t(`topics.${topicConfig.key}Desc`)
-                  };
-                  return (
-                    <div
-                      key={topic.id}
-                      className={`topic-card ${formData.topic?.id === topic.id ? 'selected' : ''}`}
-                      onClick={() => {
-                        setFormData({ ...formData, topic, branch: null });
-                        speak(`${topic.name}. ${topic.description}`);
-                      }}
-                    >
-                      <div className="topic-icon">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                          <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2" />
-                          <path d="M12 16L15 19L20 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Booking Flow */}
+      {view === 'booking' && (
+        <>
+          {/* Progress Bar */}
+          {currentStep < steps.length - 1 && (
+            <div className="progress-container">
+              <div className="progress-steps">
+                {steps.slice(0, -1).map((step, index) => (
+                  <div key={index} className={`progress-step ${index <= currentStep ? 'active' : ''} ${index < currentStep ? 'completed' : ''}`}>
+                    <div className="step-indicator">
+                      {index < currentStep ? (
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                          <path d="M5 10L8 13L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                      </div>
-                      <h3 className="topic-name">{topic.name}</h3>
-                      <p className="topic-description">{topic.description}</p>
+                      ) : (
+                        <span>{index + 1}</span>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Select Branch */}
-          {currentStep === 2 && (
-            <div className="step-content fade-in">
-              <h2 className="step-title">
-                <SpokenText text={t('step2.title')} />
-              </h2>
-              <p className="step-description">
-                <SpokenText
-                  text={`${t('step2.description')} ${formData.topic?.name} ${t('step2.services')}`}
-                >
-                  {t('step2.description')} <strong>{formData.topic?.name}</strong> {t('step2.services')}
-                </SpokenText>
-              </p>
-
-              <div className="branch-list">
-                {getAvailableBranches().map((branch) => (
-                  <div
-                    key={branch.id}
-                    className={`branch-card ${formData.branch?.id === branch.id ? 'selected' : ''}`}
-                    onClick={() => {
-                      setFormData({ ...formData, branch, date: '', time: '' });
-                      speak(
-                        `${branch.name}. ${branch.address}. ${t('step2.weekday')} ${branch.weekdayHours}. ${t('step2.saturday')} ${branch.saturdayHours}`
-                      );
-                    }}
-                  >
-                    <div className="branch-header">
-                      <h3 className="branch-name">{branch.name}</h3>
-                      <div className={`branch-radio ${formData.branch?.id === branch.id ? 'checked' : ''}`}>
-                        {formData.branch?.id === branch.id && <div className="radio-dot" />}
-                      </div>
-                    </div>
-                    <p className="branch-address">{branch.address}</p>
-                    <div className="branch-hours">
-                      <div className="hours-row">
-                        <span className="hours-label">{t('step2.weekday')}</span>
-                        <span className="hours-value">{branch.weekdayHours}</span>
-                      </div>
-                      <div className="hours-row">
-                        <span className="hours-label">{t('step2.saturday')}</span>
-                        <span className="hours-value">{branch.saturdayHours}</span>
-                      </div>
+                    <div className="step-label">
+                      <SpokenText text={step} />
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Step 3: Select Date & Time */}
-          {currentStep === 3 && (
-            <div className="step-content fade-in">
-              <h2 className="step-title">
-                <SpokenText text={t('step3.title')} />
-              </h2>
-              <p className="step-description">
-                <SpokenText text={`${t('step3.description')} ${formData.branch?.name}`}>
-                  {t('step3.description')} <strong>{formData.branch?.name}</strong>.
-                </SpokenText>
-              </p>
-
-              <div className="datetime-container">
-                <div className="form-group">
-                  <label htmlFor="date">
-                    <SpokenText text={t('step3.dateLabel')}>
-                      {t('step3.dateLabel')} *
-                    </SpokenText>
-                  </label>
-                  <input
-                    type="date"
-                    id="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value, time: '' })}
-                    min={getMinDate()}
-                    max={getMaxDate()}
-                    required
-                  />
-                  <p className="input-hint">
-                    <SpokenText text={t('step3.dateHint')} />
-                  </p>
-                </div>
-
-                {formData.date && (
-                  <div className="time-slots-section">
-                    <label>
-                      <SpokenText text={t('step3.timeLabel')}>
-                        {t('step3.timeLabel')} *
-                      </SpokenText>
-                    </label>
-                    <div className="time-slots-grid">
-                      {generateTimeSlots(formData.date, formData.branch).length > 0 ? (
-                        generateTimeSlots(formData.date, formData.branch).map((time) => (
-                          <button
-                            key={time}
-                            type="button"
-                            className={`time-slot ${formData.time === time ? 'selected' : ''}`}
-                            onClick={() => {
-                              speak(time);
-                              setFormData({ ...formData, time });
-                            }}
-                          >
-                            {time}
-                          </button>
-                        ))
-                      ) : (
-                        <p className="no-slots">
-                          <SpokenText text={t('step3.noSlots')} />
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
+              <div className="progress-bar">
+                <div
+                  className="progress-fill"
+                  style={{ width: `${(currentStep / (steps.length - 2)) * 100}%` }}
+                />
               </div>
             </div>
           )}
 
-          {/* Step 4: Confirmation */}
-          {currentStep === 4 && (
-            <div className="step-content fade-in confirmation-content">
-              <div className="success-icon">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                  <circle cx="40" cy="40" r="38" fill="var(--color-success)" fillOpacity="0.1" />
-                  <circle cx="40" cy="40" r="30" fill="var(--color-success)" />
-                  <path d="M28 40L36 48L52 32" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-
-              <h2 className="confirmation-title">
-                <SpokenText text={t('step4.title')} />
-              </h2>
-              <p className="confirmation-message">
-                <SpokenText text={`${t('step4.message')} ${formData.email}`}>
-                  {t('step4.message')} <strong>{formData.email}</strong>.
-                </SpokenText>
-              </p>
-
-              <div
-                className={`appointment-summary${enabled ? ' tts-clickable' : ''}`}
-                onClick={
-                  enabled
-                    ? (e) => {
-                        e.stopPropagation();
-                        speak(getAppointmentSummarySpeech());
-                      }
-                    : undefined
-                }
-                onKeyDown={
-                  enabled
-                    ? (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          speak(getAppointmentSummarySpeech());
-                        }
-                      }
-                    : undefined
-                }
-                role={enabled ? 'button' : undefined}
-                tabIndex={enabled ? 0 : undefined}
-                aria-label={enabled ? t('accessibility.clickToHear') : undefined}
-              >
-                <h3 className="summary-heading">{t('step4.summaryHeading')}</h3>
-
-                <div className="summary-section">
-                  <div className="summary-label">{t('step4.contactInfo')}</div>
-                  <div className="summary-value">{formData.firstName} {formData.lastName}</div>
-                  <div className="summary-value secondary">{formData.email}</div>
-                  <div className="summary-value secondary">{formData.phone}</div>
-                </div>
-
-                <div className="summary-divider"></div>
-
-                <div className="summary-section">
-                  <div className="summary-label">{t('step4.appointmentType')}</div>
-                  <div className="summary-value">{formData.topic?.name}</div>
-                </div>
-
-                <div className="summary-divider"></div>
-
-                <div className="summary-section">
-                  <div className="summary-label">{t('step4.location')}</div>
-                  <div className="summary-value">{formData.branch?.name}</div>
-                  <div className="summary-value secondary">{formData.branch?.address}</div>
-                </div>
-
-                <div className="summary-divider"></div>
-
-                <div className="summary-section">
-                  <div className="summary-label">{t('step4.dateTime')}</div>
-                  <div className="summary-value">
-                    {new Date(formData.date + 'T00:00:00').toLocaleDateString(i18n.language === 'es' ? 'es-ES' : 'en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </div>
-                  <div className="summary-value secondary">{formData.time}</div>
-                </div>
-              </div>
-
-              <div className="confirmation-actions">
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    speak(t('step4.bookAnother'));
-                    setCurrentStep(0);
-                    setFormData({
-                      firstName: '',
-                      lastName: '',
-                      email: '',
-                      phone: '',
-                      topic: null,
-                      branch: null,
-                      date: '',
-                      time: '',
-                    });
-                  }}
-                >
-                  {t('step4.bookAnother')}
-                </button>
-              </div>
-
-              <p className="confirmation-note">
-                <SpokenText text={t('step4.note')} />
-              </p>
-            </div>
-          )}
-
-          {/* Navigation Buttons */}
-          {currentStep < steps.length - 1 && (
-            <div className="navigation-buttons">
-              {currentStep > 0 && (
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    speak(t('buttons.back'));
-                    handleBack();
-                  }}
-                >
-                  {t('buttons.back')}
-                </button>
+          {/* Main Content */}
+          <main className="main-content">
+            <div className="content-card">
+              {/* Booking error */}
+              {bookingError && (
+                <div className="booking-error">{bookingError}</div>
               )}
 
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  if (currentStep === 3) {
-                    speak(t('buttons.confirm'));
-                    handleSubmit();
-                  } else {
-                    speak(t('buttons.continue'));
-                    handleNext();
-                  }
-                }}
-                disabled={!canProceed()}
-              >
-                {currentStep === 3 ? t('buttons.confirm') : t('buttons.continue')}
-              </button>
+              {/* Step 0: Personal Information */}
+              {currentStep === 0 && (
+                <div className="step-content fade-in">
+                  <h2 className="step-title">
+                    <SpokenText text={t('step0.title')} />
+                  </h2>
+                  <p className="step-description">
+                    <SpokenText text={t('step0.description')} />
+                  </p>
+
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label htmlFor="firstName">{t('step0.firstName')} *</label>
+                      <input
+                        type="text"
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        placeholder={t('step0.firstNamePlaceholder')}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="lastName">{t('step0.lastName')} *</label>
+                      <input
+                        type="text"
+                        id="lastName"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        placeholder={t('step0.lastNamePlaceholder')}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="email">{t('step0.email')} *</label>
+                    <input
+                      type="email"
+                      id="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder={t('step0.emailPlaceholder')}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="phone">{t('step0.phone')} *</label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      value={formData.phone}
+                      onChange={handlePhoneChange}
+                      placeholder={t('step0.phonePlaceholder')}
+                      maxLength="14"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Step 1: Select Topic */}
+              {currentStep === 1 && (
+                <div className="step-content fade-in">
+                  <h2 className="step-title">
+                    <SpokenText text={t('step1.title')} />
+                  </h2>
+                  <p className="step-description">
+                    <SpokenText text={t('step1.description')} />
+                  </p>
+
+                  <div className="topic-grid">
+                    {topics.map((topicConfig) => {
+                      const topic = {
+                        id: topicConfig.id,
+                        name: t(`topics.${topicConfig.key}`),
+                        description: t(`topics.${topicConfig.key}Desc`)
+                      };
+                      return (
+                        <div
+                          key={topic.id}
+                          className={`topic-card ${formData.topic?.id === topic.id ? 'selected' : ''}`}
+                          onClick={() => {
+                            setFormData({ ...formData, topic, branch: null });
+                            speak(`${topic.name}. ${topic.description}`);
+                          }}
+                        >
+                          <div className="topic-icon">
+                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                              <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2" />
+                              <path d="M12 16L15 19L20 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </div>
+                          <h3 className="topic-name">{topic.name}</h3>
+                          <p className="topic-description">{topic.description}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Select Branch */}
+              {currentStep === 2 && (
+                <div className="step-content fade-in">
+                  <h2 className="step-title">
+                    <SpokenText text={t('step2.title')} />
+                  </h2>
+                  <p className="step-description">
+                    <SpokenText
+                      text={`${t('step2.description')} ${formData.topic?.name} ${t('step2.services')}`}
+                    >
+                      {t('step2.description')} <strong>{formData.topic?.name}</strong> {t('step2.services')}
+                    </SpokenText>
+                  </p>
+
+                  <div className="branch-list">
+                    {getAvailableBranches().map((branch) => (
+                      <div
+                        key={branch.id}
+                        className={`branch-card ${formData.branch?.id === branch.id ? 'selected' : ''}`}
+                        onClick={() => {
+                          setFormData({ ...formData, branch, date: '', time: '' });
+                          setBookedSlots([]);
+                          loadBookedSlots(branch.id);
+                          speak(
+                            `${branch.name}. ${branch.address}. ${t('step2.weekday')} ${branch.weekdayHours}. ${t('step2.saturday')} ${branch.saturdayHours}`
+                          );
+                        }}
+                      >
+                        <div className="branch-header">
+                          <h3 className="branch-name">{branch.name}</h3>
+                          <div className={`branch-radio ${formData.branch?.id === branch.id ? 'checked' : ''}`}>
+                            {formData.branch?.id === branch.id && <div className="radio-dot" />}
+                          </div>
+                        </div>
+                        <p className="branch-address">{branch.address}</p>
+                        <div className="branch-hours">
+                          <div className="hours-row">
+                            <span className="hours-label">{t('step2.weekday')}</span>
+                            <span className="hours-value">{branch.weekdayHours}</span>
+                          </div>
+                          <div className="hours-row">
+                            <span className="hours-label">{t('step2.saturday')}</span>
+                            <span className="hours-value">{branch.saturdayHours}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Select Date & Time */}
+              {currentStep === 3 && (
+                <div className="step-content fade-in">
+                  <h2 className="step-title">
+                    <SpokenText text={t('step3.title')} />
+                  </h2>
+                  <p className="step-description">
+                    <SpokenText text={`${t('step3.description')} ${formData.branch?.name}`}>
+                      {t('step3.description')} <strong>{formData.branch?.name}</strong>.
+                    </SpokenText>
+                  </p>
+
+                  <div className="datetime-container">
+                    <div className="form-group">
+                      <label htmlFor="date">
+                        <SpokenText text={t('step3.dateLabel')}>
+                          {t('step3.dateLabel')} *
+                        </SpokenText>
+                      </label>
+                      <input
+                        type="date"
+                        id="date"
+                        value={formData.date}
+                        onChange={(e) => {
+                          setFormData({ ...formData, date: e.target.value, time: '' });
+                          // Re-fetch booked slots for the branch when date changes
+                          if (formData.branch) {
+                            loadBookedSlots(formData.branch.id);
+                          }
+                        }}
+                        min={getMinDate()}
+                        max={getMaxDate()}
+                        required
+                      />
+                      <p className="input-hint">
+                        <SpokenText text={t('step3.dateHint')} />
+                      </p>
+                    </div>
+
+                    {formData.date && (
+                      <div className="time-slots-section">
+                        <label>
+                          <SpokenText text={t('step3.timeLabel')}>
+                            {t('step3.timeLabel')} *
+                          </SpokenText>
+                        </label>
+                        {slotsLoading ? (
+                          <p className="no-slots">Loading available times...</p>
+                        ) : (
+                          <div className="time-slots-grid">
+                            {generateTimeSlots(formData.date, formData.branch).length > 0 ? (
+                              generateTimeSlots(formData.date, formData.branch).map((time) => (
+                                <button
+                                  key={time}
+                                  type="button"
+                                  className={`time-slot ${formData.time === time ? 'selected' : ''}`}
+                                  onClick={() => {
+                                    speak(time);
+                                    setFormData({ ...formData, time });
+                                  }}
+                                >
+                                  {time}
+                                </button>
+                              ))
+                            ) : (
+                              <p className="no-slots">
+                                <SpokenText text={t('step3.noSlots')} />
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Confirmation */}
+              {currentStep === 4 && (
+                <div className="step-content fade-in confirmation-content">
+                  <div className="success-icon">
+                    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                      <circle cx="40" cy="40" r="38" fill="var(--color-success)" fillOpacity="0.1" />
+                      <circle cx="40" cy="40" r="30" fill="var(--color-success)" />
+                      <path d="M28 40L36 48L52 32" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+
+                  <h2 className="confirmation-title">
+                    <SpokenText text={t('step4.title')} />
+                  </h2>
+                  <p className="confirmation-message">
+                    <SpokenText text={`${t('step4.message')} ${formData.email}`}>
+                      {t('step4.message')} <strong>{formData.email}</strong>.
+                    </SpokenText>
+                  </p>
+
+                  <div
+                    className={`appointment-summary${enabled ? ' tts-clickable' : ''}`}
+                    onClick={
+                      enabled
+                        ? (e) => {
+                            e.stopPropagation();
+                            speak(getAppointmentSummarySpeech());
+                          }
+                        : undefined
+                    }
+                    onKeyDown={
+                      enabled
+                        ? (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              speak(getAppointmentSummarySpeech());
+                            }
+                          }
+                        : undefined
+                    }
+                    role={enabled ? 'button' : undefined}
+                    tabIndex={enabled ? 0 : undefined}
+                    aria-label={enabled ? t('accessibility.clickToHear') : undefined}
+                  >
+                    <h3 className="summary-heading">{t('step4.summaryHeading')}</h3>
+
+                    <div className="summary-section">
+                      <div className="summary-label">{t('step4.contactInfo')}</div>
+                      <div className="summary-value">{formData.firstName} {formData.lastName}</div>
+                      <div className="summary-value secondary">{formData.email}</div>
+                      <div className="summary-value secondary">{formData.phone}</div>
+                    </div>
+
+                    <div className="summary-divider"></div>
+
+                    <div className="summary-section">
+                      <div className="summary-label">{t('step4.appointmentType')}</div>
+                      <div className="summary-value">{formData.topic?.name}</div>
+                    </div>
+
+                    <div className="summary-divider"></div>
+
+                    <div className="summary-section">
+                      <div className="summary-label">{t('step4.location')}</div>
+                      <div className="summary-value">{formData.branch?.name}</div>
+                      <div className="summary-value secondary">{formData.branch?.address}</div>
+                    </div>
+
+                    <div className="summary-divider"></div>
+
+                    <div className="summary-section">
+                      <div className="summary-label">{t('step4.dateTime')}</div>
+                      <div className="summary-value">
+                        {new Date(formData.date + 'T00:00:00').toLocaleDateString(i18n.language === 'es' ? 'es-ES' : 'en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </div>
+                      <div className="summary-value secondary">{formData.time}</div>
+                    </div>
+                  </div>
+
+                  <div className="confirmation-actions">
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => {
+                        speak(t('step4.bookAnother'));
+                        resetForm();
+                      }}
+                    >
+                      {t('step4.bookAnother')}
+                    </button>
+                  </div>
+
+                  <p className="confirmation-note">
+                    <SpokenText text={t('step4.note')} />
+                  </p>
+                </div>
+              )}
+
+              {/* Navigation Buttons */}
+              {currentStep < steps.length - 1 && (
+                <div className="navigation-buttons">
+                  {currentStep > 0 && (
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        speak(t('buttons.back'));
+                        handleBack();
+                      }}
+                    >
+                      {t('buttons.back')}
+                    </button>
+                  )}
+
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => {
+                      if (currentStep === 3) {
+                        speak(t('buttons.confirm'));
+                        handleSubmit();
+                      } else {
+                        speak(t('buttons.continue'));
+                        handleNext();
+                      }
+                    }}
+                    disabled={!canProceed() || bookingLoading}
+                  >
+                    {bookingLoading
+                      ? 'Booking...'
+                      : currentStep === 3
+                        ? t('buttons.confirm')
+                        : t('buttons.continue')}
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </main>
+          </main>
+        </>
+      )}
 
       {/* Footer */}
       <footer className="app-footer">

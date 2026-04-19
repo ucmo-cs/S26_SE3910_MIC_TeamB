@@ -65,3 +65,58 @@ export async function registerApi(email, password, displayName) {
   }
   return response.json();
 }
+
+// -------------------------------------------------------------------------
+// Appointment API
+// -------------------------------------------------------------------------
+
+export async function bookAppointment(dto) {
+  const response = await apiRequest('/api/appointments', {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || 'Failed to book appointment');
+  }
+  return response.json();
+}
+
+export async function fetchAppointmentsByEmail(email) {
+  const response = await apiRequest(`/api/appointments/customer?email=${encodeURIComponent(email)}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch appointments');
+  }
+  return response.json();
+}
+
+export async function fetchAppointmentsByBranch(branchId) {
+  const response = await apiRequest(`/api/appointments/branch/${branchId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch branch appointments');
+  }
+  return response.json();
+}
+
+export async function cancelAppointment(id) {
+  const response = await apiRequest(`/api/appointments/${id}/cancel`, {
+    method: 'PUT',
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || 'Failed to cancel appointment');
+  }
+  return response.json();
+}
+
+export async function rescheduleAppointment(id, newDateTime) {
+  const response = await apiRequest(`/api/appointments/${id}/reschedule`, {
+    method: 'PUT',
+    body: JSON.stringify(newDateTime),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || 'Failed to reschedule appointment');
+  }
+  return response.json();
+}
