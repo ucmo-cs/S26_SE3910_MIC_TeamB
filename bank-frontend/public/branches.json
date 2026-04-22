@@ -1,0 +1,106 @@
+[
+  {
+    "name": "Raytown",
+    "address": "6705 Blue Ridge Blvd, Raytown, MO 64133",
+    "latitude": 39.001644,
+    "longitude": -94.482193,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  },
+  {
+    "name": "State Line",
+    "address": "8901 State Line Rd, Kansas City, MO 64114",
+    "latitude": 38.9669656,
+    "longitude": -94.6078215,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  },
+  {
+    "name": "Brookside",
+    "address": "6336 Brookside Plaza, Kansas City, MO 64113",
+    "latitude": 39.0132942,
+    "longitude": -94.5907863,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  },
+  {
+    "name": "Grandview",
+    "address": "12829 US-71 Frontage, Grandview, MO 64030",
+    "latitude": 38.8694387,
+    "longitude": -94.5266419,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  },
+  {
+    "name": "Country Club Plaza",
+    "address": "118 W 47th St, Kansas City, MO 64112",
+    "latitude": 39.0420792,
+    "longitude": -94.5883498,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  },
+  {
+    "name": "Prairie Village",
+    "address": "4006 W 83rd St, Prairie Village, KS 66208",
+    "latitude": 38.9787679,
+    "longitude": -94.631722,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  },
+  {
+    "name": "MLK Boulevard",
+    "address": "4401 Dr. Martin Luther King Jr. Blvd, Kansas City, MO 64130",
+    "latitude": 39.0349426,
+    "longitude": -94.5351203,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  },
+  {
+    "name": "Kansas City KS - 43rd",
+    "address": "1906 W 43rd Ave, Kansas City, KS 66103",
+    "latitude": 39.0503191,
+    "longitude": -94.6075279,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  },
+  {
+    "name": "Leawood",
+    "address": "11405 Nall Ave, Leawood, KS 66211",
+    "latitude": 38.921476,
+    "longitude": -94.6488709,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  },
+  {
+    "name": "Lee's Summit - 291",
+    "address": "301 Rte 291, Lee's Summit, MO 64063",
+    "latitude": 38.9108,
+    "longitude": -94.3822,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  },
+  {
+    "name": "Woods Chapel",
+    "address": "750 NE Woods Chapel Rd, Lee's Summit, MO 64064",
+    "latitude": 38.9827567,
+    "longitude": -94.3630318,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  },
+  {
+    "name": "Downtown KC",
+    "address": "1001 Main St, Kansas City, MO 64105",
+    "latitude": 39.102162,
+    "longitude": -94.583015,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  },
+  {
+    "name": "Rainbow Boulevard",
+    "address": "4020 Rainbow Blvd, Kansas City, KS 66103",
+    "latitude": 39.0540847,
+    "longitude": -94.6121021,
+    "weekdayHours": "8:30 AM – 5:30 PM",
+    "saturdayHours": "Closed"
+  }
+]
