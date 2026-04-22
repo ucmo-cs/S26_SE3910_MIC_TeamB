@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AppointmentController.class)
-@WithMockUser
+@WithMockUser(username = "jane@example.com")
 class AppointmentControllerTest {
 
     @Autowired
@@ -41,7 +41,7 @@ class AppointmentControllerTest {
 
     private ObjectMapper objectMapper;
 
-    private final LocalDateTime appointmentTime = LocalDateTime.of(2026, 4, 15, 10, 0);
+    private final LocalDateTime appointmentTime = LocalDateTime.of(2027, 6, 15, 10, 0);
 
     private AppointmentDTO sampleDTO() {
         return AppointmentDTO.builder()
@@ -80,6 +80,33 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.customerName").value("Jane Doe"))
                 .andExpect(jsonPath("$.status").value("SCHEDULED"));
+    }
+
+    @Test
+    void bookAppointment_returns400_whenValidationFails() throws Exception {
+        // Missing required fields
+        AppointmentDTO invalid = AppointmentDTO.builder().build();
+
+        mockMvc.perform(post("/api/appointments")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalid)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation Failed"));
+    }
+
+    @Test
+    void bookAppointment_returns409_whenSlotAlreadyBooked() throws Exception {
+        when(appointmentService.bookAppointment(any(AppointmentDTO.class)))
+                .thenThrow(new DuplicateBookingException(1L, appointmentTime));
+
+        mockMvc.perform(post("/api/appointments")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sampleDTO())))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("Conflict"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("already booked")));
     }
 
     // -------------------------------------------------------------------------
@@ -143,15 +170,25 @@ class AppointmentControllerTest {
 
     // -------------------------------------------------------------------------
     // GET /api/appointments/customer?email=
+    // (Fix #9: must match authenticated user)
     // -------------------------------------------------------------------------
 
     @Test
-    void getByCustomerEmail_returns200WithList() throws Exception {
+    void getByCustomerEmail_returns200_whenEmailMatchesAuthUser() throws Exception {
         when(appointmentService.getAppointmentsByEmail("jane@example.com")).thenReturn(List.of(sampleDTO()));
 
         mockMvc.perform(get("/api/appointments/customer").param("email", "jane@example.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void getByCustomerEmail_returns403_whenEmailDoesNotMatchAuthUser() throws Exception {
+        // Authenticated as jane@example.com but requesting someone else's data
+        mockMvc.perform(get("/api/appointments/customer").param("email", "other@example.com"))
+                .andExpect(status().isForbidden());
+
+        verify(appointmentService, never()).getAppointmentsByEmail(anyString());
     }
 
     // -------------------------------------------------------------------------

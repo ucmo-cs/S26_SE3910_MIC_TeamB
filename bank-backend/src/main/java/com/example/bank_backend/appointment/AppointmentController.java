@@ -1,9 +1,11 @@
 package com.example.bank_backend.appointment;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -21,7 +23,7 @@ public class AppointmentController {
     // -------------------------------------------------------------------------
 
     @PostMapping
-    public ResponseEntity<AppointmentDTO> bookAppointment(@RequestBody AppointmentDTO dto) {
+    public ResponseEntity<AppointmentDTO> bookAppointment(@Valid @RequestBody AppointmentDTO dto) {
         AppointmentDTO created = appointmentService.bookAppointment(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -45,8 +47,19 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getAppointmentsByBranch(branchId));
     }
 
+    /**
+     * Returns appointments for the given email. The authenticated user's email
+     * (from the JWT principal) must match the requested email — users may only
+     * view their own appointments.
+     */
     @GetMapping("/customer")
-    public ResponseEntity<List<AppointmentDTO>> getByCustomerEmail(@RequestParam String email) {
+    public ResponseEntity<List<AppointmentDTO>> getByCustomerEmail(
+            @RequestParam String email,
+            Authentication authentication) {
+        String authenticatedEmail = authentication.getName();
+        if (!authenticatedEmail.equals(email)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(appointmentService.getAppointmentsByEmail(email));
     }
 

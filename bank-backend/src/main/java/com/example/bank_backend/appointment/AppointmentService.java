@@ -2,6 +2,7 @@ package com.example.bank_backend.appointment;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -47,7 +48,18 @@ public class AppointmentService {
     // CRUD operations
     // -------------------------------------------------------------------------
 
+    @Transactional
     public AppointmentDTO bookAppointment(AppointmentDTO dto) {
+        // Prevent double-booking: same branch + same time slot
+        boolean alreadyBooked = appointmentRepository
+                .existsByBranchIdAndAppointmentDateTimeAndStatus(
+                        dto.getBranchId(),
+                        dto.getAppointmentDateTime(),
+                        AppointmentStatus.SCHEDULED);
+        if (alreadyBooked) {
+            throw new DuplicateBookingException(dto.getBranchId(), dto.getAppointmentDateTime());
+        }
+
         Appointment saved = appointmentRepository.save(toEntity(dto));
         return toDTO(saved);
     }
@@ -94,6 +106,7 @@ public class AppointmentService {
     // Status transitions
     // -------------------------------------------------------------------------
 
+    @Transactional
     public AppointmentDTO cancelAppointment(Long id) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new AppointmentNotFoundException(id));
@@ -101,6 +114,7 @@ public class AppointmentService {
         return toDTO(appointmentRepository.save(appointment));
     }
 
+    @Transactional
     public AppointmentDTO rescheduleAppointment(Long id, LocalDateTime newDateTime) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new AppointmentNotFoundException(id));
@@ -109,6 +123,7 @@ public class AppointmentService {
         return toDTO(appointmentRepository.save(appointment));
     }
 
+    @Transactional
     public AppointmentDTO completeAppointment(Long id) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new AppointmentNotFoundException(id));

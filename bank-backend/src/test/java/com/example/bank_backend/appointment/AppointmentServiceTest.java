@@ -59,6 +59,8 @@ class AppointmentServiceTest {
     @Test
     void bookAppointment_savesAndReturnsDTO() {
         Appointment saved = buildAppointment(1L, AppointmentStatus.SCHEDULED);
+        when(repository.existsByBranchIdAndAppointmentDateTimeAndStatus(
+                1L, appointmentTime, AppointmentStatus.SCHEDULED)).thenReturn(false);
         when(repository.save(any(Appointment.class))).thenReturn(saved);
 
         AppointmentDTO result = service.bookAppointment(buildDTO());
@@ -67,6 +69,18 @@ class AppointmentServiceTest {
         assertThat(result.getCustomerName()).isEqualTo("Jane Doe");
         assertThat(result.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
         verify(repository, times(1)).save(any(Appointment.class));
+    }
+
+    @Test
+    void bookAppointment_throwsDuplicateBooking_whenSlotAlreadyTaken() {
+        when(repository.existsByBranchIdAndAppointmentDateTimeAndStatus(
+                1L, appointmentTime, AppointmentStatus.SCHEDULED)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.bookAppointment(buildDTO()))
+                .isInstanceOf(DuplicateBookingException.class)
+                .hasMessageContaining("already booked");
+
+        verify(repository, never()).save(any(Appointment.class));
     }
 
     // -------------------------------------------------------------------------

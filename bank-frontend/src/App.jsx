@@ -265,6 +265,16 @@ function App() {
     setFormData({ ...formData, phone: formatted });
   };
 
+  // Convert 24h time string ("09:00") to 12h display ("9:00 AM")
+  const formatTime12h = (time24) => {
+    const [hourStr, minute] = time24.split(':');
+    let hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    if (hour === 0) hour = 12;
+    else if (hour > 12) hour -= 12;
+    return `${hour}:${minute} ${ampm}`;
+  };
+
   const resetForm = () => {
     setCurrentStep(0);
     setFormData({
@@ -557,12 +567,13 @@ function App() {
                                   key={time}
                                   type="button"
                                   className={`time-slot ${formData.time === time ? 'selected' : ''}`}
+                                  title={time}
                                   onClick={() => {
                                     speak(time);
                                     setFormData({ ...formData, time });
                                   }}
                                 >
-                                  {time}
+                                  {formatTime12h(time)}
                                 </button>
                               ))
                             ) : (
@@ -658,7 +669,7 @@ function App() {
                           day: 'numeric'
                         })}
                       </div>
-                      <div className="summary-value secondary">{formData.time}</div>
+                      <div className="summary-value secondary">{formData.time ? formatTime12h(formData.time) : ''}</div>
                     </div>
                   </div>
 

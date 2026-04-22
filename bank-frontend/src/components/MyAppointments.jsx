@@ -8,6 +8,15 @@ import {
 import './MyAppointments.css';
 
 const MyAppointments = ({ userEmail, branches, topics, onBackToBooking }) => {
+  // Convert 24h time string ("09:00") to 12h display ("9:00 AM")
+  const formatTime12h = (time24) => {
+    const [hourStr, minute] = time24.split(':');
+    let hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    if (hour === 0) hour = 12;
+    else if (hour > 12) hour -= 12;
+    return `${hour}:${minute} ${ampm}`;
+  };
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -309,7 +318,7 @@ const MyAppointments = ({ userEmail, branches, topics, onBackToBooking }) => {
                                     className={`reschedule-time-btn ${rescheduleTime === slot ? 'selected' : ''}`}
                                     onClick={() => setRescheduleTime(slot)}
                                   >
-                                    {slot}
+                                    {formatTime12h(slot)}
                                   </button>
                                 ))}
                               </div>
