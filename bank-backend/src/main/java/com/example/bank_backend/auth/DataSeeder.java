@@ -6,11 +6,16 @@ import com.example.bank_backend.branch.BranchTopicMapping;
 import com.example.bank_backend.branch.BranchTopicRepository;
 import com.example.bank_backend.topic.Topic;
 import com.example.bank_backend.topic.TopicRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -56,33 +61,27 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
-        // Seed branches
-        List<Branch> branches = branchRepository.saveAll(List.of(
-                Branch.builder()
-                        .name("Raytown")
-                        .address("6705 Blue Ridge Blvd, Raytown, MO 64133")
-                        .weekdayHours("8:30 AM – 5:30 PM")
-                        .saturdayHours("Closed")
-                        .build(),
-                Branch.builder()
-                        .name("Woods Chapel")
-                        .address("750 NE Woods Chapel Rd, Lee's Summit, MO 64064")
-                        .weekdayHours("8:30 AM – 5:30 PM")
-                        .saturdayHours("Closed")
-                        .build(),
-                Branch.builder()
-                        .name("Blue Hills")
-                        .address("6100 Troost Ave, Kansas City, MO 64110")
-                        .weekdayHours("8:30 AM – 5:30 PM")
-                        .saturdayHours("Closed")
-                        .build(),
-                Branch.builder()
-                        .name("Grandview")
-                        .address("12829 U.S. 71 Frontage, Grandview, MO 64030")
-                        .weekdayHours("8:30 AM – 5:30 PM")
-                        .saturdayHours("Closed")
-                        .build()
-        ));
+        // Read branch data from branches.json
+        List<Branch> branches;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            InputStream is = new ClassPathResource("branches.json").getInputStream();
+            List<Map<String, Object>> branchDataList = mapper.readValue(is, new TypeReference<>() {});
+
+            List<Branch> branchEntities = branchDataList.stream()
+                    .map(data -> Branch.builder()
+                            .name((String) data.get("name"))
+                            .address((String) data.get("address"))
+                            .weekdayHours((String) data.get("weekdayHours"))
+                            .saturdayHours((String) data.get("saturdayHours"))
+                            .build())
+                    .toList();
+
+            branches = branchRepository.saveAll(branchEntities);
+        } catch (Exception e) {
+            System.err.println("Failed to read branches.json: " + e.getMessage());
+            return;
+        }
         System.out.println("Seeded " + branches.size() + " branches");
 
         // Seed topics
@@ -103,16 +102,14 @@ public class DataSeeder implements CommandLineRunner {
         System.out.println("Seeded " + topics.size() + " topics");
 
         // Seed branch-topic mappings (all branches offer all topics)
-        for (Branch branch : branches) {
-            for (Topic topic : topics) {
-                branchTopicRepository.save(
-                        BranchTopicMapping.builder()
+        List<BranchTopicMapping> mappings = branches.stream()
+                .flatMap(branch -> topics.stream()
+                        .map(topic -> BranchTopicMapping.builder()
                                 .branchId(branch.getId())
                                 .topicId(topic.getId())
-                                .build()
-                );
-            }
-        }
+                                .build()))
+                .toList();
+        branchTopicRepository.saveAll(mappings);
         System.out.println("Seeded branch-topic mappings");
     }
 }

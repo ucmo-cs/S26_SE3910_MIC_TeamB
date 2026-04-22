@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import SettingsMenu from './components/SettingsMenu';
 import SpokenText from './components/SpokenText';
 import MyAppointments from './components/MyAppointments';
+import BranchMap from './components/BranchMap';
 import Login from './login';
 import { fetchBranches, fetchTopics, bookAppointment, fetchAppointmentsByBranch } from './api';
 import { useTts } from './context/useTts';
@@ -71,6 +72,11 @@ function App() {
   // Time-slot availability state
   const [bookedSlots, setBookedSlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
+
+  // Scroll to top when step or view changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStep, view]);
 
   // Pre-fill email from user when user changes
   useEffect(() => {
@@ -482,40 +488,16 @@ function App() {
                     </SpokenText>
                   </p>
 
-                  <div className="branch-list">
-                    {getAvailableBranches().map((branch) => (
-                      <div
-                        key={branch.id}
-                        className={`branch-card ${formData.branch?.id === branch.id ? 'selected' : ''}`}
-                        onClick={() => {
-                          setFormData({ ...formData, branch, date: '', time: '' });
-                          setBookedSlots([]);
-                          loadBookedSlots(branch.id);
-                          speak(
-                            `${branch.name}. ${branch.address}. ${t('step2.weekday')} ${branch.weekdayHours}. ${t('step2.saturday')} ${branch.saturdayHours}`
-                          );
-                        }}
-                      >
-                        <div className="branch-header">
-                          <h3 className="branch-name">{branch.name}</h3>
-                          <div className={`branch-radio ${formData.branch?.id === branch.id ? 'checked' : ''}`}>
-                            {formData.branch?.id === branch.id && <div className="radio-dot" />}
-                          </div>
-                        </div>
-                        <p className="branch-address">{branch.address}</p>
-                        <div className="branch-hours">
-                          <div className="hours-row">
-                            <span className="hours-label">{t('step2.weekday')}</span>
-                            <span className="hours-value">{branch.weekdayHours}</span>
-                          </div>
-                          <div className="hours-row">
-                            <span className="hours-label">{t('step2.saturday')}</span>
-                            <span className="hours-value">{branch.saturdayHours}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <BranchMap
+                    branches={getAvailableBranches()}
+                    selectedBranch={formData.branch}
+                    onSelectBranch={(branch) => {
+                      setFormData({ ...formData, branch, date: '', time: '' });
+                      setBookedSlots([]);
+                      loadBookedSlots(branch.id);
+                      speak(`${branch.name}. ${branch.address}`);
+                    }}
+                  />
                 </div>
               )}
 
