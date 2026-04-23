@@ -4,6 +4,7 @@ import SettingsMenu from './components/SettingsMenu';
 import SpokenText from './components/SpokenText';
 import MyAppointments from './components/MyAppointments';
 import BranchMap from './components/BranchMap';
+import AdminDashboard from './components/AdminDashboard';
 import Login from './login';
 import { fetchBranches, fetchTopics, bookAppointment, fetchAppointmentsByBranch } from './api';
 import { useTts } from './context/useTts';
@@ -68,6 +69,7 @@ function App() {
   });
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState('');
+  const [formError, setFormError] = useState('');
 
   // Time-slot availability state
   const [bookedSlots, setBookedSlots] = useState([]);
@@ -129,6 +131,17 @@ function App() {
       <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <p>{t('loading', 'Loading...')}</p>
       </div>
+    );
+  }
+
+  if (user?.role === 'ADMIN') {
+    return (
+      <AdminDashboard
+        branches={branches}
+        topics={topics}
+        user={user}
+        onLogout={handleLogout}
+      />
     );
   }
 
@@ -206,6 +219,21 @@ function App() {
     return maxDate.toISOString().split('T')[0];
   };
 
+  const ILLEGAL_CHARS = /[^a-zA-ZÀ-ÿ\s'\-]/;
+
+  const validateStep0 = () => {
+    if (ILLEGAL_CHARS.test(formData.firstName)) {
+      setFormError('First name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed.');
+      return false;
+    }
+    if (ILLEGAL_CHARS.test(formData.lastName)) {
+      setFormError('Last name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed.');
+      return false;
+    }
+    setFormError('');
+    return true;
+  };
+
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -214,6 +242,7 @@ function App() {
 
   const handleBack = () => {
     if (currentStep > 0) {
+      setFormError('');
       setCurrentStep(currentStep - 1);
     }
   };
@@ -390,6 +419,10 @@ function App() {
                     <SpokenText text={t('step0.description')} />
                   </p>
 
+                  {formError && (
+                    <div className="login-error" role="alert">{formError}</div>
+                  )}
+
                   <div className="form-grid">
                     <div className="form-group">
                       <label htmlFor="firstName">{t('step0.firstName')} *</label>
@@ -397,7 +430,7 @@ function App() {
                         type="text"
                         id="firstName"
                         value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        onChange={(e) => { setFormError(''); setFormData({ ...formData, firstName: e.target.value }); }}
                         placeholder={t('step0.firstNamePlaceholder')}
                         required
                       />
@@ -409,7 +442,7 @@ function App() {
                         type="text"
                         id="lastName"
                         value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        onChange={(e) => { setFormError(''); setFormData({ ...formData, lastName: e.target.value }); }}
                         placeholder={t('step0.lastNamePlaceholder')}
                         required
                       />
@@ -713,6 +746,7 @@ function App() {
                         speak(t('buttons.confirm'));
                         handleSubmit();
                       } else {
+                        if (currentStep === 0 && !validateStep0()) return;
                         speak(t('buttons.continue'));
                         handleNext();
                       }

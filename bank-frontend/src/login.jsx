@@ -32,6 +32,12 @@ const Login = ({ onLogin }) => {
       return;
     }
 
+    const ILLEGAL_CHARS = /[^a-zA-ZÀ-ÿ\s'\-]/;
+    if (isRegistering && ILLEGAL_CHARS.test(displayName.trim())) {
+      setError('Display name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed.');
+      return;
+    }
+
     setLoading(true);
     try {
       let data;
@@ -41,7 +47,7 @@ const Login = ({ onLogin }) => {
         data = await loginApi(trimmedEmail, trimmedPassword);
       }
       localStorage.setItem('bank-app-token', data.token);
-      onLogin({ email: data.email, displayName: data.displayName });
+      onLogin({ email: data.email, displayName: data.displayName, role: data.role });
     } catch (err) {
       if (err.message === 'Failed to fetch') {
         setError(t('login.errorNetwork'));

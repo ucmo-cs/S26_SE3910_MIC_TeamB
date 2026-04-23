@@ -1,0 +1,554 @@
+.admin-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background);
+}
+
+/* Header */
+.admin-header {
+  background: linear-gradient(135deg, #1a2e4a 0%, #1e3a5f 100%);
+  color: white;
+  padding: var(--space-lg) var(--space-xl);
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.admin-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.admin-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.admin-logo-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-logo-text {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.admin-badge {
+  display: inline-block;
+  background: rgba(255, 193, 7, 0.25);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.5);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  width: fit-content;
+}
+
+.admin-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.admin-welcome {
+  font-size: 0.9375rem;
+  opacity: 0.85;
+}
+
+/* Main content */
+.admin-main {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--space-2xl) var(--space-xl);
+}
+
+.admin-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-xl);
+}
+
+.admin-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a2e4a;
+  letter-spacing: -0.02em;
+}
+
+/* Stats */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-2xl);
+}
+
+.stat-card {
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.stat-card.stat-scheduled {
+  border-color: rgba(26, 77, 46, 0.3);
+  background: rgba(26, 77, 46, 0.04);
+}
+
+.stat-card.stat-cancelled {
+  border-color: rgba(220, 38, 38, 0.3);
+  background: rgba(220, 38, 38, 0.04);
+}
+
+.stat-card.stat-completed {
+  border-color: rgba(45, 106, 79, 0.3);
+  background: rgba(45, 106, 79, 0.04);
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1a2e4a;
+  line-height: 1;
+  margin-bottom: var(--space-xs);
+}
+
+.stat-card.stat-scheduled .stat-number { color: var(--color-primary); }
+.stat-card.stat-cancelled .stat-number { color: var(--color-error); }
+.stat-card.stat-completed .stat-number { color: var(--color-success); }
+
+.stat-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-light);
+}
+
+/* Filters */
+.admin-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  flex-wrap: wrap;
+}
+
+.status-filters {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 2px solid var(--color-border);
+  background: white;
+  color: var(--color-text-secondary);
+}
+
+.filter-btn:hover {
+  border-color: #1a2e4a;
+  color: #1a2e4a;
+}
+
+.filter-btn.active {
+  background: #1a2e4a;
+  border-color: #1a2e4a;
+  color: white;
+}
+
+.filter-btn.scheduled.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.filter-btn.cancelled.active {
+  background: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.filter-btn.completed.active {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.admin-search {
+  padding: var(--space-sm) var(--space-lg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-family: var(--font-body);
+  width: 280px;
+  transition: all var(--transition-base);
+  background: white;
+}
+
+.admin-search:focus {
+  outline: none;
+  border-color: #1a2e4a;
+  box-shadow: 0 0 0 3px rgba(26, 46, 74, 0.1);
+}
+
+/* Appointment cards */
+.admin-appointments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.admin-appt-card {
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  transition: box-shadow var(--transition-base);
+}
+
+.admin-appt-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: #1a2e4a;
+}
+
+.admin-appt-card.status-SCHEDULED::before { background: var(--color-primary); }
+.admin-appt-card.status-CANCELLED::before { background: var(--color-error); }
+.admin-appt-card.status-COMPLETED::before { background: var(--color-success); }
+
+.admin-appt-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.admin-appt-main {
+  display: grid;
+  grid-template-columns: 220px 1fr auto;
+  align-items: center;
+  gap: var(--space-xl);
+  padding: var(--space-lg) var(--space-xl);
+}
+
+.admin-appt-customer {
+  min-width: 0;
+}
+
+.admin-appt-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-appt-email {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-appt-details {
+  min-width: 0;
+}
+
+.admin-appt-datetime {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  margin-bottom: 4px;
+}
+
+.admin-appt-date {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.admin-appt-time {
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.admin-appt-meta {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.meta-sep {
+  color: var(--color-text-light);
+}
+
+.admin-appt-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+.admin-appt-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* Status badges — reuse from MyAppointments.css */
+.status-badge {
+  padding: var(--space-xs) var(--space-md);
+  border-radius: 100px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.status-badge.SCHEDULED {
+  background: rgba(26, 77, 46, 0.1);
+  color: var(--color-primary);
+}
+
+.status-badge.CANCELLED {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--color-error);
+}
+
+.status-badge.COMPLETED {
+  background: rgba(45, 106, 79, 0.1);
+  color: var(--color-success);
+}
+
+/* Action buttons */
+.btn-cancel {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 2px solid var(--color-error);
+  background: white;
+  color: var(--color-error);
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: var(--color-error);
+  color: white;
+}
+
+.btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-reschedule {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 2px solid #1a2e4a;
+  background: white;
+  color: #1a2e4a;
+}
+
+.btn-reschedule:hover:not(:disabled) {
+  background: #1a2e4a;
+  color: white;
+}
+
+.btn-reschedule:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Reschedule inline form */
+.reschedule-form {
+  margin: 0 var(--space-xl) var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+  border: 2px solid #1a2e4a;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.reschedule-form-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a2e4a;
+  margin-bottom: var(--space-md);
+}
+
+.reschedule-fields {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: var(--space-md);
+}
+
+.reschedule-fields .form-group {
+  flex: 1;
+  min-width: 180px;
+}
+
+.reschedule-fields .form-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xs);
+  display: block;
+}
+
+.reschedule-fields .form-group input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-family: var(--font-body);
+  transition: all var(--transition-base);
+  background: white;
+}
+
+.reschedule-fields .form-group input:focus {
+  outline: none;
+  border-color: #1a2e4a;
+  box-shadow: 0 0 0 3px rgba(26, 46, 74, 0.1);
+}
+
+.reschedule-time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.reschedule-time-btn {
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-family: var(--font-body);
+}
+
+.reschedule-time-btn:hover {
+  border-color: #1a2e4a;
+}
+
+.reschedule-time-btn.selected {
+  border-color: #1a2e4a;
+  background: #1a2e4a;
+  color: white;
+}
+
+.reschedule-actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.slots-hint {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-sm);
+}
+
+/* States */
+.admin-loading,
+.admin-empty {
+  text-align: center;
+  padding: var(--space-3xl);
+  color: var(--color-text-secondary);
+  font-size: 1.0625rem;
+}
+
+.admin-error {
+  background: rgba(220, 38, 38, 0.05);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-appt-main {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+
+  .admin-appt-right {
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-main {
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-search {
+    width: 100%;
+  }
+}

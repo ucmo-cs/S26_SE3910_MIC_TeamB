@@ -54,6 +54,17 @@ public class DataSeeder implements CommandLineRunner {
             userRepository.save(testUser);
             System.out.println("Seeded test user: test@bank.com / password123");
         }
+
+        if (!userRepository.existsByEmail("admin@bank.com")) {
+            User admin = User.builder()
+                    .email("admin@bank.com")
+                    .password(passwordEncoder.encode("admin123"))
+                    .displayName("Admin")
+                    .role("ADMIN")
+                    .build();
+            userRepository.save(admin);
+            System.out.println("Seeded admin user: admin@bank.com / admin123");
+        }
     }
 
     private void seedBranchesAndTopics() {
