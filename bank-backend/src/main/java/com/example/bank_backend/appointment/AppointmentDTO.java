@@ -15,6 +15,8 @@ public class AppointmentDTO {
     private Long id;
 
     @NotBlank(message = "Customer name is required")
+    @Size(max = 100, message = "Customer name must be 100 characters or fewer")
+    @Pattern(regexp = "^[\\p{L}\\s'\\-]+$", message = "Customer name may only contain letters, spaces, hyphens, and apostrophes")
     private String customerName;
 
     @NotBlank(message = "Customer email is required")

@@ -21,6 +21,23 @@ spring:
       hibernate:
         format_sql: true
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+app:
+  mail:
+    from: ${MAIL_USERNAME:no-reply@commercebank.com}
+
 jwt:
   # Base64-encoded signing key for local/dev only.
   secret: dGhpc0lzQVNlY3VyZUJhc2U2NEVuY29kZWRLZXlGb3JKV1RBdXRo

@@ -223,11 +223,11 @@ function App() {
 
   const validateStep0 = () => {
     if (ILLEGAL_CHARS.test(formData.firstName)) {
-      setFormError('First name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed.');
+      setFormError(t('validation.illegalChars', { field: t('validation.firstName') }));
       return false;
     }
     if (ILLEGAL_CHARS.test(formData.lastName)) {
-      setFormError('Last name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed.');
+      setFormError(t('validation.illegalChars', { field: t('validation.lastName') }));
       return false;
     }
     setFormError('');
