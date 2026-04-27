@@ -75,29 +75,53 @@ public class AppointmentController {
     // -------------------------------------------------------------------------
 
     @PutMapping("/{id}/cancel")
-    public ResponseEntity<AppointmentDTO> cancelAppointment(@PathVariable Long id) {
+    public ResponseEntity<AppointmentDTO> cancelAppointment(@PathVariable Long id, Authentication authentication) {
+        if (!isOwnerOrAdmin(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(appointmentService.cancelAppointment(id));
     }
 
     @PutMapping("/{id}/reschedule")
     public ResponseEntity<AppointmentDTO> rescheduleAppointment(
             @PathVariable Long id,
-            @RequestBody @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime newDateTime) {
+            @RequestBody @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime newDateTime,
+            Authentication authentication) {
+        if (!isOwnerOrAdmin(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(appointmentService.rescheduleAppointment(id, newDateTime));
     }
 
     @PutMapping("/{id}/complete")
-    public ResponseEntity<AppointmentDTO> completeAppointment(@PathVariable Long id) {
+    public ResponseEntity<AppointmentDTO> completeAppointment(@PathVariable Long id, Authentication authentication) {
+        if (!isOwnerOrAdmin(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(appointmentService.completeAppointment(id));
     }
 
     @PutMapping("/{id}/arrive")
-    public ResponseEntity<AppointmentDTO> markArrived(@PathVariable Long id) {
+    public ResponseEntity<AppointmentDTO> markArrived(@PathVariable Long id, Authentication authentication) {
+        if (!isOwnerOrAdmin(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(appointmentService.markArrived(id));
     }
 
     @PutMapping("/{id}/no-show")
-    public ResponseEntity<AppointmentDTO> markNoShow(@PathVariable Long id) {
+    public ResponseEntity<AppointmentDTO> markNoShow(@PathVariable Long id, Authentication authentication) {
+        if (!isOwnerOrAdmin(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(appointmentService.markNoShow(id));
+    }
+
+    private boolean isOwnerOrAdmin(Long appointmentId, Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (isAdmin) return true;
+        AppointmentDTO appt = appointmentService.getAppointmentById(appointmentId);
+        return appt.getCustomerEmail().equals(authentication.getName());
     }
 }
