@@ -128,3 +128,44 @@ export async function rescheduleAppointment(id, newDateTime) {
   }
   return response.json();
 }
+
+export async function markArrived(id) {
+  const response = await apiRequest(`/api/appointments/${id}/arrive`, {
+    method: 'PUT',
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || 'Failed to mark arrived');
+  }
+  return response.json();
+}
+
+export async function markNoShow(id) {
+  const response = await apiRequest(`/api/appointments/${id}/no-show`, {
+    method: 'PUT',
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || 'Failed to mark no-show');
+  }
+  return response.json();
+}
+
+export async function markComplete(id) {
+  const response = await apiRequest(`/api/appointments/${id}/complete`, {
+    method: 'PUT',
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || 'Failed to mark complete');
+  }
+  return response.json();
+}
+
+export async function fetchAnalyticsSummary() {
+  const response = await apiRequest('/api/analytics/summary');
+  if (!response.ok) {
+    throw new Error('Failed to fetch analytics summary');
+  }
+  return response.json();
+}

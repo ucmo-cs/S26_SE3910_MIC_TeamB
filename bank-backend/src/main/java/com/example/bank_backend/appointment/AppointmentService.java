@@ -12,7 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -159,28 +162,161 @@ public class AppointmentService {
     // Status transitions
     // -------------------------------------------------------------------------
 
+    private static final Map<AppointmentStatus, Set<AppointmentStatus>> ALLOWED_TRANSITIONS = Map.of(
+            AppointmentStatus.SCHEDULED, EnumSet.of(
+                    AppointmentStatus.ARRIVED,
+                    AppointmentStatus.CANCELLED,
+                    AppointmentStatus.COMPLETED,
+                    AppointmentStatus.NO_SHOW),
+            AppointmentStatus.ARRIVED, EnumSet.of(
+                    AppointmentStatus.COMPLETED,
+                    AppointmentStatus.CANCELLED),
+            AppointmentStatus.COMPLETED, EnumSet.noneOf(AppointmentStatus.class),
+            AppointmentStatus.CANCELLED, EnumSet.noneOf(AppointmentStatus.class),
+            AppointmentStatus.NO_SHOW, EnumSet.noneOf(AppointmentStatus.class)
+    );
+
+    private void assertTransition(Appointment appointment, AppointmentStatus next) {
+        AppointmentStatus current = appointment.getStatus();
+        Set<AppointmentStatus> allowed = ALLOWED_TRANSITIONS.getOrDefault(current, EnumSet.noneOf(AppointmentStatus.class));
+        if (!allowed.contains(next)) {
+            throw new InvalidStatusTransitionException(current, next);
+        }
+    }
+
     @Transactional
     public AppointmentDTO cancelAppointment(Long id) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new AppointmentNotFoundException(id));
+        assertTransition(appointment, AppointmentStatus.CANCELLED);
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        return toDTO(appointmentRepository.save(appointment));
+        Appointment saved = appointmentRepository.save(appointment);
+
+        branchRepository.findById(saved.getBranchId()).ifPresent(branch ->
+                topicRepository.findById(saved.getTopicId()).ifPresent(topic ->
+                        emailService.sendCancellation(
+                                saved.getCustomerEmail(),
+                                saved.getCustomerName(),
+                                saved.getAppointmentDateTime(),
+                                branch.getName(),
+                                topic.getName()
+                        )
+                )
+        );
+
+        return toDTO(saved);
     }
 
     @Transactional
     public AppointmentDTO rescheduleAppointment(Long id, LocalDateTime newDateTime) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new AppointmentNotFoundException(id));
+        if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
+            throw new InvalidStatusTransitionException(appointment.getStatus(), AppointmentStatus.SCHEDULED);
+        }
+        LocalDateTime oldDateTime = appointment.getAppointmentDateTime();
         appointment.setAppointmentDateTime(newDateTime);
-        appointment.setStatus(AppointmentStatus.SCHEDULED);
-        return toDTO(appointmentRepository.save(appointment));
+        appointment.setReminder24hSent(false);
+        appointment.setReminder1hSent(false);
+        Appointment saved = appointmentRepository.save(appointment);
+
+        branchRepository.findById(saved.getBranchId()).ifPresent(branch ->
+                topicRepository.findById(saved.getTopicId()).ifPresent(topic ->
+                        emailService.sendRescheduleConfirmation(
+                                saved.getCustomerEmail(),
+                                saved.getCustomerName(),
+                                oldDateTime,
+                                saved.getAppointmentDateTime(),
+                                branch.getName(),
+                                branch.getAddress(),
+                                branch.getWeekdayHours(),
+                                topic.getName()
+                        )
+                )
+        );
+
+        return toDTO(saved);
     }
 
     @Transactional
     public AppointmentDTO completeAppointment(Long id) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new AppointmentNotFoundException(id));
+        assertTransition(appointment, AppointmentStatus.COMPLETED);
         appointment.setStatus(AppointmentStatus.COMPLETED);
         return toDTO(appointmentRepository.save(appointment));
+    }
+
+    @Transactional
+    public AppointmentDTO markArrived(Long id) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new AppointmentNotFoundException(id));
+        assertTransition(appointment, AppointmentStatus.ARRIVED);
+        appointment.setStatus(AppointmentStatus.ARRIVED);
+        return toDTO(appointmentRepository.save(appointment));
+    }
+
+    @Transactional
+    public AppointmentDTO markNoShow(Long id) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new AppointmentNotFoundException(id));
+        assertTransition(appointment, AppointmentStatus.NO_SHOW);
+        appointment.setStatus(AppointmentStatus.NO_SHOW);
+        return toDTO(appointmentRepository.save(appointment));
+    }
+
+    // -------------------------------------------------------------------------
+    // Reminders (manual trigger via DevController)
+    // -------------------------------------------------------------------------
+
+    @Transactional
+    public ReminderDispatchResult sendDueReminders() {
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Appointment> due24h = appointmentRepository
+                .findByStatusAndAppointmentDateTimeBetweenAndReminder24hSentFalse(
+                        AppointmentStatus.SCHEDULED,
+                        now.plusHours(23),
+                        now.plusHours(25));
+
+        int sent24h = 0;
+        for (Appointment appt : due24h) {
+            dispatchReminder(appt, "tomorrow");
+            appt.setReminder24hSent(true);
+            appointmentRepository.save(appt);
+            sent24h++;
+        }
+
+        List<Appointment> due1h = appointmentRepository
+                .findByStatusAndAppointmentDateTimeBetweenAndReminder1hSentFalse(
+                        AppointmentStatus.SCHEDULED,
+                        now.plusMinutes(45),
+                        now.plusMinutes(75));
+
+        int sent1h = 0;
+        for (Appointment appt : due1h) {
+            dispatchReminder(appt, "in 1 hour");
+            appt.setReminder1hSent(true);
+            appointmentRepository.save(appt);
+            sent1h++;
+        }
+
+        return new ReminderDispatchResult(sent24h, sent1h);
+    }
+
+    private void dispatchReminder(Appointment appt, String windowLabel) {
+        branchRepository.findById(appt.getBranchId()).ifPresent(branch ->
+                topicRepository.findById(appt.getTopicId()).ifPresent(topic ->
+                        emailService.sendReminder(
+                                appt.getCustomerEmail(),
+                                appt.getCustomerName(),
+                                appt.getAppointmentDateTime(),
+                                branch.getName(),
+                                branch.getAddress(),
+                                topic.getName(),
+                                windowLabel
+                        )
+                )
+        );
     }
 }

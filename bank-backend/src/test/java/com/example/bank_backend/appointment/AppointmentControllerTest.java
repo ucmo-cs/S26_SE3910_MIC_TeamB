@@ -83,6 +83,35 @@ class AppointmentControllerTest {
     }
 
     @Test
+    void bookAppointment_returnsNotesInResponse() throws Exception {
+        AppointmentDTO withNotes = sampleDTO();
+        withNotes.setNotes("Need help with savings account");
+        when(appointmentService.bookAppointment(any(AppointmentDTO.class))).thenReturn(withNotes);
+
+        mockMvc.perform(post("/api/appointments")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(withNotes)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.notes").value("Need help with savings account"));
+    }
+
+    @Test
+    void bookAppointment_rejectsNotesOver500Chars() throws Exception {
+        AppointmentDTO tooLong = sampleDTO();
+        tooLong.setNotes("a".repeat(501));
+
+        mockMvc.perform(post("/api/appointments")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(tooLong)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation Failed"));
+
+        verify(appointmentService, never()).bookAppointment(any(AppointmentDTO.class));
+    }
+
+    @Test
     void bookAppointment_returns400_whenValidationFails() throws Exception {
         // Missing required fields
         AppointmentDTO invalid = AppointmentDTO.builder().build();
@@ -273,6 +302,82 @@ class AppointmentControllerTest {
                 .thenThrow(new AppointmentNotFoundException(99L));
 
         mockMvc.perform(put("/api/appointments/99/complete")
+                        .with(csrf()))
+                .andExpect(status().isNotFound());
+    }
+
+    // -------------------------------------------------------------------------
+    // PUT /api/appointments/{id}/arrive
+    // -------------------------------------------------------------------------
+
+    @Test
+    void markArrived_returns200WithArrivedStatus() throws Exception {
+        AppointmentDTO arrived = sampleDTO();
+        arrived.setStatus(AppointmentStatus.ARRIVED);
+        when(appointmentService.markArrived(1L)).thenReturn(arrived);
+
+        mockMvc.perform(put("/api/appointments/1/arrive")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ARRIVED"));
+    }
+
+    @Test
+    void markArrived_returns409_whenInvalidTransition() throws Exception {
+        when(appointmentService.markArrived(1L))
+                .thenThrow(new InvalidStatusTransitionException(
+                        AppointmentStatus.CANCELLED, AppointmentStatus.ARRIVED));
+
+        mockMvc.perform(put("/api/appointments/1/arrive")
+                        .with(csrf()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("Conflict"));
+    }
+
+    @Test
+    void markArrived_returns404_whenNotFound() throws Exception {
+        when(appointmentService.markArrived(99L))
+                .thenThrow(new AppointmentNotFoundException(99L));
+
+        mockMvc.perform(put("/api/appointments/99/arrive")
+                        .with(csrf()))
+                .andExpect(status().isNotFound());
+    }
+
+    // -------------------------------------------------------------------------
+    // PUT /api/appointments/{id}/no-show
+    // -------------------------------------------------------------------------
+
+    @Test
+    void markNoShow_returns200WithNoShowStatus() throws Exception {
+        AppointmentDTO noShow = sampleDTO();
+        noShow.setStatus(AppointmentStatus.NO_SHOW);
+        when(appointmentService.markNoShow(1L)).thenReturn(noShow);
+
+        mockMvc.perform(put("/api/appointments/1/no-show")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("NO_SHOW"));
+    }
+
+    @Test
+    void markNoShow_returns409_whenInvalidTransition() throws Exception {
+        when(appointmentService.markNoShow(1L))
+                .thenThrow(new InvalidStatusTransitionException(
+                        AppointmentStatus.COMPLETED, AppointmentStatus.NO_SHOW));
+
+        mockMvc.perform(put("/api/appointments/1/no-show")
+                        .with(csrf()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("Conflict"));
+    }
+
+    @Test
+    void markNoShow_returns404_whenNotFound() throws Exception {
+        when(appointmentService.markNoShow(99L))
+                .thenThrow(new AppointmentNotFoundException(99L));
+
+        mockMvc.perform(put("/api/appointments/99/no-show")
                         .with(csrf()))
                 .andExpect(status().isNotFound());
     }

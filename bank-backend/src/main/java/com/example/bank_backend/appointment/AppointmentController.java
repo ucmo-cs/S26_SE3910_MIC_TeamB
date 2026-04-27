@@ -90,4 +90,14 @@ public class AppointmentController {
     public ResponseEntity<AppointmentDTO> completeAppointment(@PathVariable Long id) {
         return ResponseEntity.ok(appointmentService.completeAppointment(id));
     }
+
+    @PutMapping("/{id}/arrive")
+    public ResponseEntity<AppointmentDTO> markArrived(@PathVariable Long id) {
+        return ResponseEntity.ok(appointmentService.markArrived(id));
+    }
+
+    @PutMapping("/{id}/no-show")
+    public ResponseEntity<AppointmentDTO> markNoShow(@PathVariable Long id) {
+        return ResponseEntity.ok(appointmentService.markNoShow(id));
+    }
 }

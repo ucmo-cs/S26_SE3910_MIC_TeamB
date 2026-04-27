@@ -5,6 +5,9 @@ import {
   fetchAppointmentsByBranch,
   cancelAppointment as cancelAppointmentApi,
   rescheduleAppointment as rescheduleAppointmentApi,
+  markComplete as markCompleteApi,
+  markNoShow as markNoShowApi,
+  fetchAnalyticsSummary,
 } from '../api';
 import { useTts } from '../context/useTts';
 import SpokenText from './SpokenText';
@@ -18,6 +21,9 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
@@ -50,9 +56,23 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
     }
   }, [t]);
 
+  const loadAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true);
+    setAnalyticsError('');
+    try {
+      const data = await fetchAnalyticsSummary();
+      setAnalytics(data);
+    } catch (err) {
+      setAnalyticsError(err.message || 'Failed to load analytics');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadAppointments();
-  }, [loadAppointments]);
+    loadAnalytics();
+  }, [loadAppointments, loadAnalytics]);
 
   const getBranchName = (id) => branches.find((b) => b.id === id)?.name || `Branch #${id}`;
   const getTopicName = (id) => topics.find((t) => t.id === id)?.name || `Topic #${id}`;
@@ -73,6 +93,31 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
       await loadAppointments();
     } catch (err) {
       alert(err.message || t('admin.actions.cancel'));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleComplete = async (id) => {
+    setActionLoading(id);
+    try {
+      await markCompleteApi(id);
+      await loadAppointments();
+    } catch (err) {
+      alert(err.message || t('admin.actions.complete'));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleNoShow = async (id) => {
+    if (!window.confirm(t('admin.noShowConfirm'))) return;
+    setActionLoading(id);
+    try {
+      await markNoShowApi(id);
+      await loadAppointments();
+    } catch (err) {
+      alert(err.message || t('admin.actions.noShow'));
     } finally {
       setActionLoading(null);
     }
@@ -170,15 +215,19 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
   const counts = {
     total: appointments.length,
     scheduled: appointments.filter((a) => a.status === 'SCHEDULED').length,
+    arrived: appointments.filter((a) => a.status === 'ARRIVED').length,
     cancelled: appointments.filter((a) => a.status === 'CANCELLED').length,
     completed: appointments.filter((a) => a.status === 'COMPLETED').length,
+    noShow: appointments.filter((a) => a.status === 'NO_SHOW').length,
   };
 
   const filterOptions = [
     { key: 'ALL',       label: t('admin.stats.total'),     count: counts.total },
     { key: 'SCHEDULED', label: t('admin.stats.scheduled'), count: counts.scheduled },
+    { key: 'ARRIVED',   label: t('admin.stats.arrived'),   count: counts.arrived },
     { key: 'CANCELLED', label: t('admin.stats.cancelled'), count: counts.cancelled },
     { key: 'COMPLETED', label: t('admin.stats.completed'), count: counts.completed },
+    { key: 'NO_SHOW',   label: t('admin.stats.noShow'),    count: counts.noShow },
   ];
 
   return (
@@ -211,19 +260,118 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
           </h1>
           <button
             className="btn btn-secondary"
-            onClick={() => { speak(t('admin.refresh')); loadAppointments(); }}
+            onClick={() => { speak(t('admin.refresh')); loadAppointments(); loadAnalytics(); }}
             style={{ fontSize: '0.875rem' }}
           >
             {t('admin.refresh')}
           </button>
         </div>
 
+        <section className="admin-insights" aria-labelledby="insights-heading">
+          <h2 id="insights-heading" className="admin-insights-title">
+            <SpokenText text={t('admin.insights.title')} />
+          </h2>
+
+          {analyticsError && (
+            <div className="admin-error" role="alert">{analyticsError}</div>
+          )}
+
+          {analyticsLoading && !analytics ? (
+            <div className="admin-loading">{t('admin.insights.loading')}</div>
+          ) : analytics ? (
+            <>
+              <div className="insights-stat-row">
+                <div className="insights-stat-card">
+                  <div className="stat-number">{analytics.totalAppointments}</div>
+                  <div className="stat-label">{t('admin.insights.totalAppointments')}</div>
+                </div>
+                <div className="insights-stat-card">
+                  <div className="stat-number">{(analytics.noShowRate * 100).toFixed(1)}%</div>
+                  <div className="stat-label">{t('admin.insights.noShowRate')}</div>
+                </div>
+              </div>
+
+              <div className="insights-grid">
+                <div className="insights-list">
+                  <h3 className="insights-list-title">{t('admin.insights.topTopics')}</h3>
+                  {analytics.topTopics.length === 0 ? (
+                    <p className="insights-empty">{t('admin.insights.empty')}</p>
+                  ) : (
+                    <ul>
+                      {analytics.topTopics.map((entry) => (
+                        <li key={entry.topic}>
+                          <span className="insights-list-name">{entry.topic}</span>
+                          <span className="insights-list-count">{entry.count}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="insights-list">
+                  <h3 className="insights-list-title">{t('admin.insights.busiestBranches')}</h3>
+                  {analytics.busiestBranches.length === 0 ? (
+                    <p className="insights-empty">{t('admin.insights.empty')}</p>
+                  ) : (
+                    <ul>
+                      {analytics.busiestBranches.map((entry) => (
+                        <li key={entry.branch}>
+                          <span className="insights-list-name">{entry.branch}</span>
+                          <span className="insights-list-count">{entry.count}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="insights-chart">
+                  <h3 className="insights-list-title">{t('admin.insights.peakHours')}</h3>
+                  {analytics.peakHours.length === 0 ? (
+                    <p className="insights-empty">{t('admin.insights.empty')}</p>
+                  ) : (
+                    (() => {
+                      const max = Math.max(...analytics.peakHours.map((p) => p.count), 1);
+                      return (
+                        <div className="bar-chart">
+                          {analytics.peakHours.map((p) => {
+                            const display = p.hour === 0
+                              ? '12 AM'
+                              : p.hour < 12
+                                ? `${p.hour} AM`
+                                : p.hour === 12
+                                  ? '12 PM'
+                                  : `${p.hour - 12} PM`;
+                            return (
+                              <div key={p.hour} className="bar-row">
+                                <span className="bar-label">{display}</span>
+                                <div className="bar-track">
+                                  <div
+                                    className="bar-fill"
+                                    style={{ width: `${(p.count / max) * 100}%` }}
+                                  />
+                                </div>
+                                <span className="bar-count">{p.count}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()
+                  )}
+                </div>
+              </div>
+            </>
+          ) : null}
+        </section>
+
         <div className="admin-stats">
           {[
             { key: 'total',     count: counts.total,     label: t('admin.stats.total') },
             { key: 'scheduled', count: counts.scheduled, label: t('admin.stats.scheduled'), cls: 'stat-scheduled' },
-            { key: 'cancelled', count: counts.cancelled, label: t('admin.stats.cancelled'), cls: 'stat-cancelled' },
+            { key: 'arrived',   count: counts.arrived,   label: t('admin.stats.arrived'),   cls: 'stat-arrived' },
             { key: 'completed', count: counts.completed, label: t('admin.stats.completed'), cls: 'stat-completed' },
+            { key: 'cancelled', count: counts.cancelled, label: t('admin.stats.cancelled'), cls: 'stat-cancelled' },
+            { key: 'noShow',    count: counts.noShow,    label: t('admin.stats.noShow'),    cls: 'stat-noshow' },
           ].map(({ key, count, label, cls = '' }) => (
             <div key={key} className={`stat-card ${cls}`}>
               <div className="stat-number">
@@ -301,6 +449,14 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
                           <span>{topicName}</span>
                         </SpokenText>
                       </div>
+                      {appt.notes && (
+                        <div className="admin-appt-notes">
+                          <span className="admin-appt-notes-label">{t('admin.notesLabel')}</span>
+                          <SpokenText text={appt.notes}>
+                            <span className="admin-appt-notes-value">{appt.notes}</span>
+                          </SpokenText>
+                        </div>
+                      )}
                     </div>
 
                     <div className="admin-appt-right">
@@ -311,18 +467,36 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
                       >
                         {appt.status}
                       </span>
-                      {appt.status === 'SCHEDULED' && (
+                      {(appt.status === 'SCHEDULED' || appt.status === 'ARRIVED') && (
                         <div className="admin-appt-actions">
                           <button
-                            className="btn-reschedule"
-                            onClick={() => {
-                              speak(isRescheduling ? t('admin.actions.close') : t('admin.actions.reschedule'));
-                              isRescheduling ? handleCloseReschedule() : handleOpenReschedule(appt);
-                            }}
+                            className="btn-complete"
+                            onClick={() => { speak(t('admin.actions.complete')); handleComplete(appt.id); }}
                             disabled={actionLoading === appt.id}
                           >
-                            {isRescheduling ? t('admin.actions.close') : t('admin.actions.reschedule')}
+                            {actionLoading === appt.id ? '...' : t('admin.actions.complete')}
                           </button>
+                          {appt.status === 'SCHEDULED' && (
+                            <>
+                              <button
+                                className="btn-noshow"
+                                onClick={() => { speak(t('admin.actions.noShow')); handleNoShow(appt.id); }}
+                                disabled={actionLoading === appt.id}
+                              >
+                                {t('admin.actions.noShow')}
+                              </button>
+                              <button
+                                className="btn-reschedule"
+                                onClick={() => {
+                                  speak(isRescheduling ? t('admin.actions.close') : t('admin.actions.reschedule'));
+                                  isRescheduling ? handleCloseReschedule() : handleOpenReschedule(appt);
+                                }}
+                                disabled={actionLoading === appt.id}
+                              >
+                                {isRescheduling ? t('admin.actions.close') : t('admin.actions.reschedule')}
+                              </button>
+                            </>
+                          )}
                           <button
                             className="btn-cancel"
                             onClick={() => { speak(t('admin.actions.cancel')); handleCancel(appt.id); }}

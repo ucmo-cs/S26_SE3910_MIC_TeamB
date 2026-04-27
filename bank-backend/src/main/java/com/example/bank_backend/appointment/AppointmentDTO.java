@@ -36,6 +36,7 @@ public class AppointmentDTO {
 
     private AppointmentStatus status;
 
+    @Size(max = 500, message = "Notes must be 500 characters or fewer")
     private String notes;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")

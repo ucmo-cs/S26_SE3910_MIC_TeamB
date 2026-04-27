@@ -35,6 +35,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
+    @ExceptionHandler(InvalidStatusTransitionException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidStatusTransition(InvalidStatusTransitionException ex) {
+        Map<String, Object> body = Map.of(
+                "timestamp", LocalDateTime.now().toString(),
+                "status", HttpStatus.CONFLICT.value(),
+                "error", "Conflict",
+                "message", ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
         Map<String, Object> body = Map.of(
