@@ -38,6 +38,14 @@ export async function loginApi(email, password) {
   return response.json();
 }
 
+export async function fetchAllAppointments() {
+  const response = await apiRequest('/api/appointments');
+  if (!response.ok) {
+    throw new Error('Failed to fetch appointments');
+  }
+  return response.json();
+}
+
 export async function fetchBranches() {
   const response = await apiRequest('/api/branches');
   if (!response.ok) {
