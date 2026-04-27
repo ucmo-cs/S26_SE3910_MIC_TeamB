@@ -41,6 +41,14 @@ public class Appointment {
 
     private String notes;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean reminder24hSent = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean reminder1hSent = false;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

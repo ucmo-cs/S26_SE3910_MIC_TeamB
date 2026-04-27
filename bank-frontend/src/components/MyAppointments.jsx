@@ -4,6 +4,7 @@ import {
   fetchAppointmentsByBranch,
   cancelAppointment as cancelAppointmentApi,
   rescheduleAppointment as rescheduleAppointmentApi,
+  markArrived as markArrivedApi,
 } from '../api';
 import './MyAppointments.css';
 
@@ -27,15 +28,18 @@ const MyAppointments = ({ userEmail, branches, topics, onBackToBooking }) => {
   const [rescheduleSlots, setRescheduleSlots] = useState([]);
   const [rescheduleSlotsLoading, setRescheduleSlotsLoading] = useState(false);
 
+  const isActiveStatus = (status) => status === 'SCHEDULED' || status === 'ARRIVED';
+
   const loadAppointments = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const data = await fetchAppointmentsByEmail(userEmail);
-      // Sort: SCHEDULED first, then by date desc
       data.sort((a, b) => {
-        if (a.status === 'SCHEDULED' && b.status !== 'SCHEDULED') return -1;
-        if (a.status !== 'SCHEDULED' && b.status === 'SCHEDULED') return 1;
+        const aActive = a.status === 'SCHEDULED' || a.status === 'ARRIVED';
+        const bActive = b.status === 'SCHEDULED' || b.status === 'ARRIVED';
+        if (aActive && !bActive) return -1;
+        if (!aActive && bActive) return 1;
         return new Date(b.appointmentDateTime) - new Date(a.appointmentDateTime);
       });
       setAppointments(data);
@@ -75,6 +79,18 @@ const MyAppointments = ({ userEmail, branches, topics, onBackToBooking }) => {
         hour12: true,
       }),
     };
+  };
+
+  const handleArrived = async (id) => {
+    setActionLoading(id);
+    try {
+      await markArrivedApi(id);
+      await loadAppointments();
+    } catch (err) {
+      alert(err.message || 'Failed to mark arrived');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleCancel = async (id) => {
@@ -181,8 +197,8 @@ const MyAppointments = ({ userEmail, branches, topics, onBackToBooking }) => {
     }
   };
 
-  const scheduledAppointments = appointments.filter((a) => a.status === 'SCHEDULED');
-  const pastAppointments = appointments.filter((a) => a.status !== 'SCHEDULED');
+  const scheduledAppointments = appointments.filter((a) => isActiveStatus(a.status));
+  const pastAppointments = appointments.filter((a) => !isActiveStatus(a.status));
 
   if (loading) {
     return (
@@ -270,13 +286,24 @@ const MyAppointments = ({ userEmail, branches, topics, onBackToBooking }) => {
                     </div>
 
                     <div className="appointment-card-actions">
-                      <button
-                        className="btn-reschedule"
-                        onClick={() => handleOpenReschedule(appt)}
-                        disabled={actionLoading === appt.id}
-                      >
-                        Reschedule
-                      </button>
+                      {appt.status === 'SCHEDULED' && (
+                        <>
+                          <button
+                            className="btn-arrived"
+                            onClick={() => handleArrived(appt.id)}
+                            disabled={actionLoading === appt.id}
+                          >
+                            {actionLoading === appt.id ? 'Processing...' : "I've Arrived"}
+                          </button>
+                          <button
+                            className="btn-reschedule"
+                            onClick={() => handleOpenReschedule(appt)}
+                            disabled={actionLoading === appt.id}
+                          >
+                            Reschedule
+                          </button>
+                        </>
+                      )}
                       <button
                         className="btn-cancel"
                         onClick={() => handleCancel(appt.id)}

@@ -101,6 +101,22 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.completeAppointment(id));
     }
 
+    @PutMapping("/{id}/arrive")
+    public ResponseEntity<AppointmentDTO> markArrived(@PathVariable Long id, Authentication authentication) {
+        if (!isOwnerOrAdmin(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(appointmentService.markArrived(id));
+    }
+
+    @PutMapping("/{id}/no-show")
+    public ResponseEntity<AppointmentDTO> markNoShow(@PathVariable Long id, Authentication authentication) {
+        if (!isOwnerOrAdmin(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(appointmentService.markNoShow(id));
+    }
+
     private boolean isOwnerOrAdmin(Long appointmentId, Authentication authentication) {
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));

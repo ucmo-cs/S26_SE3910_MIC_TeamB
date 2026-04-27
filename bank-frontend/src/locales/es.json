@@ -41,7 +41,10 @@
     "firstNamePlaceholder": "Juan",
     "lastNamePlaceholder": "Pérez",
     "emailPlaceholder": "juan.perez@ejemplo.com",
-    "phonePlaceholder": "(555) 123-4567"
+    "phonePlaceholder": "(555) 123-4567",
+    "notes": "Notas (opcional)",
+    "notesPlaceholder": "¿Algo que le gustaría que el banquero sepa de antemano?",
+    "notesHint": "Hasta 500 caracteres."
   },
   "step1": {
     "title": "¿Qué lo trae hoy?",
@@ -126,17 +129,23 @@
     "stats": {
       "total": "Total",
       "scheduled": "Programadas",
+      "arrived": "Llegaron",
       "cancelled": "Canceladas",
-      "completed": "Completadas"
+      "completed": "Completadas",
+      "noShow": "No Asistieron"
     },
     "search": "Buscar por nombre o correo...",
     "loading": "Cargando citas...",
     "noResults": "No se encontraron citas.",
+    "notesLabel": "Notas",
     "cancelConfirm": "¿Cancelar esta cita?",
+    "noShowConfirm": "¿Marcar esta cita como no asistida?",
     "actions": {
       "reschedule": "Reprogramar",
       "close": "Cerrar",
       "cancel": "Cancelar",
+      "complete": "Marcar Completada",
+      "noShow": "Marcar No Asistida",
       "confirmReschedule": "Confirmar Reprogramación",
       "saving": "Guardando..."
     },
@@ -145,6 +154,16 @@
       "newDate": "Nueva Fecha",
       "loadingSlots": "Cargando horarios disponibles...",
       "noSlots": "No hay horarios disponibles para esta fecha."
+    },
+    "insights": {
+      "title": "Estadísticas",
+      "loading": "Cargando estadísticas...",
+      "totalAppointments": "Citas Totales",
+      "noShowRate": "Tasa de Inasistencia",
+      "topTopics": "Temas Principales",
+      "busiestBranches": "Sucursales Más Concurridas",
+      "peakHours": "Horas Pico",
+      "empty": "Sin datos aún."
     }
   },
   "validation": {

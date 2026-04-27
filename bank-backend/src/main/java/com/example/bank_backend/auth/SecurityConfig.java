@@ -39,6 +39,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/topics/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/appointments").hasRole("ADMIN")
+                        .requestMatchers("/api/analytics/**").hasRole("ADMIN")
+                        .requestMatchers("/api/dev/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

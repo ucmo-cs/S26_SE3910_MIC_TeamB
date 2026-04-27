@@ -63,6 +63,14 @@
   background: var(--color-success);
 }
 
+.appointment-card.status-ARRIVED::before {
+  background: var(--color-accent, #d97706);
+}
+
+.appointment-card.status-NO_SHOW::before {
+  background: var(--color-text-light);
+}
+
 .appointment-card:hover {
   box-shadow: var(--shadow-md);
   border-color: var(--color-accent);
@@ -117,6 +125,16 @@
 .status-badge.COMPLETED {
   background: rgba(45, 106, 79, 0.1);
   color: var(--color-success);
+}
+
+.status-badge.ARRIVED {
+  background: rgba(217, 119, 6, 0.12);
+  color: #b45309;
+}
+
+.status-badge.NO_SHOW {
+  background: rgba(120, 113, 108, 0.12);
+  color: #57534e;
 }
 
 .appointment-card-details {
@@ -198,6 +216,29 @@
 }
 
 .btn-reschedule:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-arrived {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 2px solid var(--color-success);
+  background: var(--color-success);
+  color: white;
+}
+
+.btn-arrived:hover:not(:disabled) {
+  filter: brightness(1.05);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
+}
+
+.btn-arrived:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -380,7 +421,8 @@
   }
 
   .appointment-card-actions .btn-cancel,
-  .appointment-card-actions .btn-reschedule {
+  .appointment-card-actions .btn-reschedule,
+  .appointment-card-actions .btn-arrived {
     width: 100%;
   }
 }

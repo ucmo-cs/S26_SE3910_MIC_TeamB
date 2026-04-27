@@ -62,6 +62,7 @@ function App() {
     lastName: '',
     email: '',
     phone: '',
+    notes: '',
     topic: null,
     branch: null,
     date: '',
@@ -257,6 +258,7 @@ function App() {
         branchId: formData.branch.id,
         topicId: formData.topic.id,
         appointmentDateTime: `${formData.date}T${formData.time}:00`,
+        notes: formData.notes?.trim() || null,
       };
       await bookAppointment(dto);
       handleNext();
@@ -311,6 +313,7 @@ function App() {
       lastName: '',
       email: user?.email || '',
       phone: '',
+      notes: '',
       topic: null,
       branch: null,
       date: '',
@@ -472,6 +475,21 @@ function App() {
                       maxLength="14"
                       required
                     />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="notes">{t('step0.notes')}</label>
+                    <textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder={t('step0.notesPlaceholder')}
+                      maxLength={500}
+                      rows={4}
+                    />
+                    <p className="input-hint">
+                      {t('step0.notesHint')} ({formData.notes.length}/500)
+                    </p>
                   </div>
                 </div>
               )}
