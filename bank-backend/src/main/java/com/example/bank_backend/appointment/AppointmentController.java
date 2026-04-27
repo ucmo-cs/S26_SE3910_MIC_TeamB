@@ -75,19 +75,37 @@ public class AppointmentController {
     // -------------------------------------------------------------------------
 
     @PutMapping("/{id}/cancel")
-    public ResponseEntity<AppointmentDTO> cancelAppointment(@PathVariable Long id) {
+    public ResponseEntity<AppointmentDTO> cancelAppointment(@PathVariable Long id, Authentication authentication) {
+        if (!isOwnerOrAdmin(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(appointmentService.cancelAppointment(id));
     }
 
     @PutMapping("/{id}/reschedule")
     public ResponseEntity<AppointmentDTO> rescheduleAppointment(
             @PathVariable Long id,
-            @RequestBody @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime newDateTime) {
+            @RequestBody @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime newDateTime,
+            Authentication authentication) {
+        if (!isOwnerOrAdmin(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(appointmentService.rescheduleAppointment(id, newDateTime));
     }
 
     @PutMapping("/{id}/complete")
-    public ResponseEntity<AppointmentDTO> completeAppointment(@PathVariable Long id) {
+    public ResponseEntity<AppointmentDTO> completeAppointment(@PathVariable Long id, Authentication authentication) {
+        if (!isOwnerOrAdmin(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(appointmentService.completeAppointment(id));
+    }
+
+    private boolean isOwnerOrAdmin(Long appointmentId, Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (isAdmin) return true;
+        AppointmentDTO appt = appointmentService.getAppointmentById(appointmentId);
+        return appt.getCustomerEmail().equals(authentication.getName());
     }
 }
