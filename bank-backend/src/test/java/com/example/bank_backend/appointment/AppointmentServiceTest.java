@@ -1,11 +1,18 @@
 package com.example.bank_backend.appointment;
 
+import com.example.bank_backend.branch.Branch;
+import com.example.bank_backend.branch.BranchRepository;
+import com.example.bank_backend.email.EmailService;
+import com.example.bank_backend.topic.Topic;
+import com.example.bank_backend.topic.TopicRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+//import org.mockito.junit.MockitoSettings;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.quality.Strictness;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,10 +23,20 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+//@MockitoSettings(strictness = Strictness.LENIENT)
 class AppointmentServiceTest {
 
     @Mock
     private AppointmentRepository repository;
+
+    @Mock
+    private BranchRepository branchRepository;
+
+    @Mock
+    private TopicRepository topicRepository;
+
+    @Mock
+    private EmailService emailService;
 
     @InjectMocks
     private AppointmentService service;
@@ -52,6 +69,23 @@ class AppointmentServiceTest {
                 .build();
     }
 
+    @BeforeEach
+    void seedCommonStubs() {
+        when(branchRepository.existsById(anyLong())).thenReturn(true);
+        when(branchRepository.findById(anyLong())).thenReturn(Optional.of(
+                Branch.builder()
+                        .id(1L)
+                        .name("Test Branch")
+                        .address("123 Main St")
+                        .weekdayHours("9-5")
+                        .build()));
+        when(topicRepository.findById(anyLong())).thenReturn(Optional.of(
+                Topic.builder()
+                        .id(2L)
+                        .name("Test Topic")
+                        .build()));
+    }
+
     // -------------------------------------------------------------------------
     // bookAppointment
     // -------------------------------------------------------------------------
@@ -69,6 +103,26 @@ class AppointmentServiceTest {
         assertThat(result.getCustomerName()).isEqualTo("Jane Doe");
         assertThat(result.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
         verify(repository, times(1)).save(any(Appointment.class));
+    }
+
+    @Test
+    void bookAppointment_persistsNotes() {
+        AppointmentDTO dto = buildDTO();
+        dto.setNotes("Bring two forms of ID");
+        when(repository.existsByBranchIdAndAppointmentDateTimeAndStatus(
+                1L, appointmentTime, AppointmentStatus.SCHEDULED)).thenReturn(false);
+        org.mockito.ArgumentCaptor<Appointment> captor =
+                org.mockito.ArgumentCaptor.forClass(Appointment.class);
+        when(repository.save(captor.capture())).thenAnswer(inv -> {
+            Appointment a = inv.getArgument(0);
+            a.setId(99L);
+            return a;
+        });
+
+        AppointmentDTO result = service.bookAppointment(dto);
+
+        assertThat(captor.getValue().getNotes()).isEqualTo("Bring two forms of ID");
+        assertThat(result.getNotes()).isEqualTo("Bring two forms of ID");
     }
 
     @Test
@@ -246,5 +300,188 @@ class AppointmentServiceTest {
 
         assertThatThrownBy(() -> service.completeAppointment(99L))
                 .isInstanceOf(AppointmentNotFoundException.class);
+    }
+
+    // -------------------------------------------------------------------------
+    // markArrived / markNoShow / transition rules
+    // -------------------------------------------------------------------------
+
+    @Test
+    void markArrived_succeeds_fromScheduled() {
+        Appointment appt = buildAppointment(1L, AppointmentStatus.SCHEDULED);
+        when(repository.findById(1L)).thenReturn(Optional.of(appt));
+        when(repository.save(appt)).thenAnswer(inv -> inv.getArgument(0));
+
+        AppointmentDTO result = service.markArrived(1L);
+
+        assertThat(result.getStatus()).isEqualTo(AppointmentStatus.ARRIVED);
+    }
+
+    @Test
+    void markArrived_throws_fromCancelled() {
+        Appointment appt = buildAppointment(1L, AppointmentStatus.CANCELLED);
+        when(repository.findById(1L)).thenReturn(Optional.of(appt));
+
+        assertThatThrownBy(() -> service.markArrived(1L))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+        verify(repository, never()).save(any(Appointment.class));
+    }
+
+    @Test
+    void markArrived_throwsNotFound_whenMissing() {
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.markArrived(99L))
+                .isInstanceOf(AppointmentNotFoundException.class);
+    }
+
+    @Test
+    void markNoShow_succeeds_fromScheduled() {
+        Appointment appt = buildAppointment(1L, AppointmentStatus.SCHEDULED);
+        when(repository.findById(1L)).thenReturn(Optional.of(appt));
+        when(repository.save(appt)).thenAnswer(inv -> inv.getArgument(0));
+
+        AppointmentDTO result = service.markNoShow(1L);
+
+        assertThat(result.getStatus()).isEqualTo(AppointmentStatus.NO_SHOW);
+    }
+
+    @Test
+    void markNoShow_throws_fromArrived() {
+        Appointment appt = buildAppointment(1L, AppointmentStatus.ARRIVED);
+        when(repository.findById(1L)).thenReturn(Optional.of(appt));
+
+        assertThatThrownBy(() -> service.markNoShow(1L))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+    }
+
+    @Test
+    void completeAppointment_succeeds_fromArrived() {
+        Appointment appt = buildAppointment(1L, AppointmentStatus.ARRIVED);
+        when(repository.findById(1L)).thenReturn(Optional.of(appt));
+        when(repository.save(appt)).thenAnswer(inv -> inv.getArgument(0));
+
+        AppointmentDTO result = service.completeAppointment(1L);
+
+        assertThat(result.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
+    }
+
+    @Test
+    void cancelAppointment_throws_fromCompleted() {
+        Appointment appt = buildAppointment(1L, AppointmentStatus.COMPLETED);
+        when(repository.findById(1L)).thenReturn(Optional.of(appt));
+
+        assertThatThrownBy(() -> service.cancelAppointment(1L))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+    }
+
+    @Test
+    void rescheduleAppointment_throws_fromArrived() {
+        Appointment appt = buildAppointment(1L, AppointmentStatus.ARRIVED);
+        when(repository.findById(1L)).thenReturn(Optional.of(appt));
+
+        assertThatThrownBy(() -> service.rescheduleAppointment(1L, appointmentTime.plusDays(1)))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+    }
+
+    // -------------------------------------------------------------------------
+    // Email triggers on cancel / reschedule
+    // -------------------------------------------------------------------------
+
+    @Test
+    void cancelAppointment_sendsCancellationEmail() {
+        Appointment appt = buildAppointment(1L, AppointmentStatus.SCHEDULED);
+        when(repository.findById(1L)).thenReturn(Optional.of(appt));
+        when(repository.save(appt)).thenAnswer(inv -> inv.getArgument(0));
+
+        service.cancelAppointment(1L);
+
+        verify(emailService, times(1)).sendCancellation(
+                eq("jane@example.com"),
+                eq("Jane Doe"),
+                eq(appointmentTime),
+                eq("Test Branch"),
+                eq("Test Topic"));
+    }
+
+    @Test
+    void rescheduleAppointment_sendsUpdatedConfirmationEmail() {
+        Appointment appt = buildAppointment(1L, AppointmentStatus.SCHEDULED);
+        LocalDateTime newTime = appointmentTime.plusDays(2);
+        when(repository.findById(1L)).thenReturn(Optional.of(appt));
+        when(repository.save(appt)).thenAnswer(inv -> inv.getArgument(0));
+
+        service.rescheduleAppointment(1L, newTime);
+
+        verify(emailService, times(1)).sendRescheduleConfirmation(
+                eq("jane@example.com"),
+                eq("Jane Doe"),
+                eq(appointmentTime),
+                eq(newTime),
+                eq("Test Branch"),
+                eq("123 Main St"),
+                eq("9-5"),
+                eq("Test Topic"));
+    }
+
+    @Test
+    void rescheduleAppointment_resetsReminderFlags() {
+        Appointment appt = buildAppointment(1L, AppointmentStatus.SCHEDULED);
+        appt.setReminder24hSent(true);
+        appt.setReminder1hSent(true);
+        when(repository.findById(1L)).thenReturn(Optional.of(appt));
+        when(repository.save(appt)).thenAnswer(inv -> inv.getArgument(0));
+
+        service.rescheduleAppointment(1L, appointmentTime.plusDays(1));
+
+        assertThat(appt.isReminder24hSent()).isFalse();
+        assertThat(appt.isReminder1hSent()).isFalse();
+    }
+
+    // -------------------------------------------------------------------------
+    // sendDueReminders
+    // -------------------------------------------------------------------------
+
+    @Test
+    void sendDueReminders_skipsAppointmentsAlreadyReminded() {
+        when(repository.findByStatusAndAppointmentDateTimeBetweenAndReminder24hSentFalse(
+                eq(AppointmentStatus.SCHEDULED), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of());
+        when(repository.findByStatusAndAppointmentDateTimeBetweenAndReminder1hSentFalse(
+                eq(AppointmentStatus.SCHEDULED), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of());
+
+        ReminderDispatchResult result = service.sendDueReminders();
+
+        assertThat(result.sent24h()).isZero();
+        assertThat(result.sent1h()).isZero();
+        verify(emailService, never()).sendReminder(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void sendDueReminders_sendsAndMarksFlags() {
+        Appointment a24 = buildAppointment(10L, AppointmentStatus.SCHEDULED);
+        Appointment a1 = buildAppointment(11L, AppointmentStatus.SCHEDULED);
+
+        when(repository.findByStatusAndAppointmentDateTimeBetweenAndReminder24hSentFalse(
+                eq(AppointmentStatus.SCHEDULED), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of(a24));
+        when(repository.findByStatusAndAppointmentDateTimeBetweenAndReminder1hSentFalse(
+                eq(AppointmentStatus.SCHEDULED), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of(a1));
+        when(repository.save(any(Appointment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ReminderDispatchResult result = service.sendDueReminders();
+
+        assertThat(result.sent24h()).isEqualTo(1);
+        assertThat(result.sent1h()).isEqualTo(1);
+        assertThat(a24.isReminder24hSent()).isTrue();
+        assertThat(a1.isReminder1hSent()).isTrue();
+        verify(emailService, times(1)).sendReminder(
+                eq("jane@example.com"), eq("Jane Doe"), any(LocalDateTime.class),
+                eq("Test Branch"), eq("123 Main St"), eq("Test Topic"), eq("tomorrow"));
+        verify(emailService, times(1)).sendReminder(
+                eq("jane@example.com"), eq("Jane Doe"), any(LocalDateTime.class),
+                eq("Test Branch"), eq("123 Main St"), eq("Test Topic"), eq("in 1 hour"));
     }
 }

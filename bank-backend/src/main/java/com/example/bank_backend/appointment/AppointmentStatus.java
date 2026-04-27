@@ -2,6 +2,8 @@ package com.example.bank_backend.appointment;
 
 public enum AppointmentStatus {
     SCHEDULED,
+    ARRIVED,
     CANCELLED,
-    COMPLETED
+    COMPLETED,
+    NO_SHOW
 }

@@ -18,6 +18,9 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final String fromAddress;
 
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("h:mm a");
+
     public EmailService(JavaMailSender mailSender,
                         @Value("${app.mail.from}") String fromAddress) {
         this.mailSender = mailSender;
@@ -34,29 +37,110 @@ public class EmailService {
             String branchWeekdayHours,
             String topicName
     ) {
+        String body = buildShell(
+                "Appointment Confirmed!",
+                "Hi " + customerName + ", your appointment has been successfully scheduled.",
+                buildDetailRows(topicName, appointmentDateTime, branchName, branchAddress),
+                "Need to reschedule or cancel? Log in to your Commerce Bank account and visit <strong>My Appointments</strong>.",
+                "Please arrive 5 minutes early. Bring a valid photo ID."
+        );
+        send(toEmail, "Appointment Confirmed – Commerce Bank", body, "confirmation");
+    }
+
+    @Async
+    public void sendCancellation(
+            String toEmail,
+            String customerName,
+            LocalDateTime appointmentDateTime,
+            String branchName,
+            String topicName
+    ) {
+        String body = buildShell(
+                "Appointment Cancelled",
+                "Hi " + customerName + ", your appointment has been cancelled.",
+                buildDetailRows(topicName, appointmentDateTime, branchName, null),
+                "Need to book a new appointment? Log in to your Commerce Bank account.",
+                "If this cancellation was not made by you, please contact us immediately."
+        );
+        send(toEmail, "Appointment Cancelled – Commerce Bank", body, "cancellation");
+    }
+
+    @Async
+    public void sendRescheduleConfirmation(
+            String toEmail,
+            String customerName,
+            LocalDateTime oldDateTime,
+            LocalDateTime newDateTime,
+            String branchName,
+            String branchAddress,
+            String branchWeekdayHours,
+            String topicName
+    ) {
+        String previousLine = "Previous time: " + oldDateTime.format(DATE_FMT) + " at " + oldDateTime.format(TIME_FMT);
+        String body = buildShell(
+                "Appointment Updated",
+                "Hi " + customerName + ", your appointment has been rescheduled. " + previousLine + ".",
+                buildDetailRows(topicName, newDateTime, branchName, branchAddress),
+                "Need to make further changes? Log in and visit <strong>My Appointments</strong>.",
+                "Please arrive 5 minutes early. Bring a valid photo ID."
+        );
+        send(toEmail, "Appointment Updated – Commerce Bank", body, "reschedule");
+    }
+
+    @Async
+    public void sendReminder(
+            String toEmail,
+            String customerName,
+            LocalDateTime appointmentDateTime,
+            String branchName,
+            String branchAddress,
+            String topicName,
+            String windowLabel
+    ) {
+        String body = buildShell(
+                "Appointment Reminder",
+                "Hi " + customerName + ", this is a friendly reminder that your appointment is " + windowLabel + ".",
+                buildDetailRows(topicName, appointmentDateTime, branchName, branchAddress),
+                "Need to reschedule or cancel? Log in to your Commerce Bank account.",
+                "Please arrive 5 minutes early. Bring a valid photo ID."
+        );
+        send(toEmail, "Appointment Reminder – Commerce Bank", body, "reminder");
+    }
+
+    // -------------------------------------------------------------------------
+    // Internal send + template helpers
+    // -------------------------------------------------------------------------
+
+    private void send(String toEmail, String subject, String html, String label) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
             helper.setFrom(fromAddress);
             helper.setTo(toEmail);
-            helper.setSubject("Appointment Confirmed – Commerce Bank");
-            helper.setText(buildHtml(customerName, appointmentDateTime, branchName,
-                    branchAddress, branchWeekdayHours, topicName), true);
+            helper.setSubject(subject);
+            helper.setText(html, true);
 
             mailSender.send(message);
-            log.info("Confirmation email sent to {}", toEmail);
+            log.info("{} email sent to {}", label, toEmail);
         } catch (Exception e) {
-            log.error("Failed to send confirmation email to {}: {}", toEmail, e.getMessage());
+            log.error("Failed to send {} email to {}: {}", label, toEmail, e.getMessage());
         }
     }
 
-    private String buildHtml(String customerName, LocalDateTime dt,
-                              String branchName, String branchAddress,
-                              String branchWeekdayHours, String topicName) {
-        String date = dt.format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy"));
-        String time = dt.format(DateTimeFormatter.ofPattern("h:mm a"));
+    private String buildDetailRows(String topicName, LocalDateTime dt, String branchName, String branchAddress) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(row("Service", topicName));
+        sb.append(row("Date", dt.format(DATE_FMT)));
+        sb.append(row("Time", dt.format(TIME_FMT)));
+        sb.append(row("Branch", branchName));
+        if (branchAddress != null) {
+            sb.append(row("Address", branchAddress));
+        }
+        return sb.toString();
+    }
 
+    private String buildShell(String headline, String intro, String detailRows,
+                              String primaryCta, String secondaryCta) {
         return """
                 <!DOCTYPE html>
                 <html lang="en">
@@ -78,19 +162,11 @@ public class EmailService {
                         <!-- Body -->
                         <tr>
                           <td style="background:#ffffff;padding:40px;">
-
-                            <!-- Success icon -->
-                            <div style="text-align:center;margin-bottom:24px;">
-                              <div style="display:inline-block;background:#e8f5e9;border-radius:50%%;width:64px;height:64px;line-height:64px;font-size:32px;">
-                                ✓
-                              </div>
-                            </div>
-
                             <h2 style="margin:0 0 8px;color:#1a4d2e;font-size:24px;text-align:center;">
-                              Appointment Confirmed!
+                              %s
                             </h2>
                             <p style="margin:0 0 28px;color:#555;font-size:15px;text-align:center;">
-                              Hi %s, your appointment has been successfully scheduled.
+                              %s
                             </p>
 
                             <!-- Details card -->
@@ -100,22 +176,13 @@ public class EmailService {
                                 <td style="padding:24px 28px;">
                                   <table width="100%%" cellpadding="0" cellspacing="0">
                                     %s
-                                    %s
-                                    %s
-                                    %s
-                                    %s
                                   </table>
                                 </td>
                               </tr>
                             </table>
 
-                            <p style="margin:0 0 8px;color:#555;font-size:14px;line-height:1.6;">
-                              Need to reschedule or cancel? Log in to your Commerce Bank account and visit
-                              <strong>My Appointments</strong>.
-                            </p>
-                            <p style="margin:0;color:#888;font-size:13px;">
-                              Please arrive 5 minutes early. Bring a valid photo ID.
-                            </p>
+                            <p style="margin:0 0 8px;color:#555;font-size:14px;line-height:1.6;">%s</p>
+                            <p style="margin:0;color:#888;font-size:13px;">%s</p>
 
                           </td>
                         </tr>
@@ -134,14 +201,7 @@ public class EmailService {
                   </table>
                 </body>
                 </html>
-                """.formatted(
-                customerName,
-                row("Service", topicName),
-                row("Date", date),
-                row("Time", time),
-                row("Branch", branchName),
-                row("Address", branchAddress)
-        );
+                """.formatted(headline, intro, detailRows, primaryCta, secondaryCta);
     }
 
     private String row(String label, String value) {
