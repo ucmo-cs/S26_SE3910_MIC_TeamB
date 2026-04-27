@@ -1,13 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   fetchAllAppointments,
   fetchAppointmentsByBranch,
   cancelAppointment as cancelAppointmentApi,
   rescheduleAppointment as rescheduleAppointmentApi,
 } from '../api';
+import { useTts } from '../context/useTts';
+import SpokenText from './SpokenText';
+import SettingsMenu from './SettingsMenu';
 import './AdminDashboard.css';
 
 const AdminDashboard = ({ branches, topics, user, onLogout }) => {
+  const { t } = useTranslation();
+  const { speak } = useTts();
+
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,11 +44,11 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
       data.sort((a, b) => new Date(b.appointmentDateTime) - new Date(a.appointmentDateTime));
       setAppointments(data);
     } catch (err) {
-      setError(err.message || 'Failed to load appointments');
+      setError(err.message || t('admin.loading'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadAppointments();
@@ -53,19 +60,19 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
   const formatDateTime = (dateTimeStr) => {
     const dt = new Date(dateTimeStr);
     return {
-      date: dt.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }),
-      time: dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      date: dt.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }),
+      time: dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true }),
     };
   };
 
   const handleCancel = async (id) => {
-    if (!window.confirm('Cancel this appointment?')) return;
+    if (!window.confirm(t('admin.cancelConfirm'))) return;
     setActionLoading(id);
     try {
       await cancelAppointmentApi(id);
       await loadAppointments();
     } catch (err) {
-      alert(err.message || 'Failed to cancel appointment');
+      alert(err.message || t('admin.actions.cancel'));
     } finally {
       setActionLoading(null);
     }
@@ -145,7 +152,7 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
       handleCloseReschedule();
       await loadAppointments();
     } catch (err) {
-      alert(err.message || 'Failed to reschedule appointment');
+      alert(err.message || t('admin.actions.confirmReschedule'));
     } finally {
       setActionLoading(null);
     }
@@ -167,6 +174,13 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
     completed: appointments.filter((a) => a.status === 'COMPLETED').length,
   };
 
+  const filterOptions = [
+    { key: 'ALL',       label: t('admin.stats.total'),     count: counts.total },
+    { key: 'SCHEDULED', label: t('admin.stats.scheduled'), count: counts.scheduled },
+    { key: 'CANCELLED', label: t('admin.stats.cancelled'), count: counts.cancelled },
+    { key: 'COMPLETED', label: t('admin.stats.completed'), count: counts.completed },
+  ];
+
   return (
     <div className="admin-container">
       <header className="admin-header">
@@ -177,56 +191,58 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
               <path d="M12 20L18 26L28 14" stroke="var(--color-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <div className="admin-logo-text-group">
-              <span className="admin-logo-text">Commerce Bank</span>
-              <span className="admin-badge">Admin</span>
+              <span className="admin-logo-text">{t('header.logo')}</span>
+              <span className="admin-badge">{t('admin.badge')}</span>
             </div>
           </div>
           <div className="admin-header-right">
-            <span className="admin-welcome">Signed in as {user.displayName}</span>
-            <button className="btn btn-secondary" onClick={onLogout}>Sign Out</button>
+            <span className="admin-welcome">
+              <SpokenText text={t('admin.signedInAs', { name: user.displayName })} />
+            </span>
+            <SettingsMenu onLogout={onLogout} />
           </div>
         </div>
       </header>
 
       <main className="admin-main">
         <div className="admin-page-header">
-          <h1 className="admin-title">All Appointments</h1>
-          <button className="btn btn-secondary" onClick={loadAppointments} style={{ fontSize: '0.875rem' }}>
-            Refresh
+          <h1 className="admin-title">
+            <SpokenText text={t('admin.title')} />
+          </h1>
+          <button
+            className="btn btn-secondary"
+            onClick={() => { speak(t('admin.refresh')); loadAppointments(); }}
+            style={{ fontSize: '0.875rem' }}
+          >
+            {t('admin.refresh')}
           </button>
         </div>
 
         <div className="admin-stats">
-          <div className="stat-card">
-            <div className="stat-number">{counts.total}</div>
-            <div className="stat-label">Total</div>
-          </div>
-          <div className="stat-card stat-scheduled">
-            <div className="stat-number">{counts.scheduled}</div>
-            <div className="stat-label">Scheduled</div>
-          </div>
-          <div className="stat-card stat-cancelled">
-            <div className="stat-number">{counts.cancelled}</div>
-            <div className="stat-label">Cancelled</div>
-          </div>
-          <div className="stat-card stat-completed">
-            <div className="stat-number">{counts.completed}</div>
-            <div className="stat-label">Completed</div>
-          </div>
+          {[
+            { key: 'total',     count: counts.total,     label: t('admin.stats.total') },
+            { key: 'scheduled', count: counts.scheduled, label: t('admin.stats.scheduled'), cls: 'stat-scheduled' },
+            { key: 'cancelled', count: counts.cancelled, label: t('admin.stats.cancelled'), cls: 'stat-cancelled' },
+            { key: 'completed', count: counts.completed, label: t('admin.stats.completed'), cls: 'stat-completed' },
+          ].map(({ key, count, label, cls = '' }) => (
+            <div key={key} className={`stat-card ${cls}`}>
+              <div className="stat-number">
+                <SpokenText text={`${count} ${label}`}>{count}</SpokenText>
+              </div>
+              <div className="stat-label">
+                <SpokenText text={label} />
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="admin-filters">
           <div className="status-filters">
-            {[
-              { key: 'ALL', label: 'All', count: counts.total },
-              { key: 'SCHEDULED', label: 'Scheduled', count: counts.scheduled },
-              { key: 'CANCELLED', label: 'Cancelled', count: counts.cancelled },
-              { key: 'COMPLETED', label: 'Completed', count: counts.completed },
-            ].map(({ key, label, count }) => (
+            {filterOptions.map(({ key, label, count }) => (
               <button
                 key={key}
                 className={`filter-btn ${statusFilter === key ? 'active' : ''} ${key !== 'ALL' ? key.toLowerCase() : ''}`}
-                onClick={() => setStatusFilter(key)}
+                onClick={() => { speak(`${label} ${count}`); setStatusFilter(key); }}
               >
                 {label} ({count})
               </button>
@@ -235,60 +251,84 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
           <input
             type="search"
             className="admin-search"
-            placeholder="Search by name or email..."
+            placeholder={t('admin.search')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label={t('admin.search')}
           />
         </div>
 
         {error && <div className="admin-error">{error}</div>}
 
         {loading ? (
-          <div className="admin-loading">Loading appointments...</div>
+          <div className="admin-loading">
+            <SpokenText text={t('admin.loading')} />
+          </div>
         ) : filtered.length === 0 ? (
-          <div className="admin-empty">No appointments found.</div>
+          <div className="admin-empty">
+            <SpokenText text={t('admin.noResults')} />
+          </div>
         ) : (
           <div className="admin-appointments">
             {filtered.map((appt) => {
               const { date, time } = formatDateTime(appt.appointmentDateTime);
               const isRescheduling = rescheduleId === appt.id;
+              const branchName = getBranchName(appt.branchId);
+              const topicName = getTopicName(appt.topicId);
+              const cardSpeech = `${appt.customerName}, ${appt.customerEmail}. ${date} ${time}. ${branchName}. ${topicName}. ${appt.status}`;
+
               return (
                 <div key={appt.id} className={`admin-appt-card status-${appt.status}`}>
                   <div className="admin-appt-main">
                     <div className="admin-appt-customer">
-                      <div className="admin-appt-name">{appt.customerName}</div>
+                      <div className="admin-appt-name">
+                        <SpokenText text={appt.customerName} />
+                      </div>
                       <div className="admin-appt-email">{appt.customerEmail}</div>
                     </div>
 
                     <div className="admin-appt-details">
                       <div className="admin-appt-datetime">
-                        <span className="admin-appt-date">{date}</span>
+                        <span className="admin-appt-date">
+                          <SpokenText text={`${date} ${time}`}>{date}</SpokenText>
+                        </span>
                         <span className="admin-appt-time">{time}</span>
                       </div>
                       <div className="admin-appt-meta">
-                        <span>{getBranchName(appt.branchId)}</span>
-                        <span className="meta-sep">·</span>
-                        <span>{getTopicName(appt.topicId)}</span>
+                        <SpokenText text={`${branchName} · ${topicName}`}>
+                          <span>{branchName}</span>
+                          <span className="meta-sep">·</span>
+                          <span>{topicName}</span>
+                        </SpokenText>
                       </div>
                     </div>
 
                     <div className="admin-appt-right">
-                      <span className={`status-badge ${appt.status}`}>{appt.status}</span>
+                      <span
+                        className={`status-badge ${appt.status}`}
+                        onClick={() => speak(appt.status)}
+                        style={{ cursor: 'default' }}
+                      >
+                        {appt.status}
+                      </span>
                       {appt.status === 'SCHEDULED' && (
                         <div className="admin-appt-actions">
                           <button
                             className="btn-reschedule"
-                            onClick={() => (isRescheduling ? handleCloseReschedule() : handleOpenReschedule(appt))}
+                            onClick={() => {
+                              speak(isRescheduling ? t('admin.actions.close') : t('admin.actions.reschedule'));
+                              isRescheduling ? handleCloseReschedule() : handleOpenReschedule(appt);
+                            }}
                             disabled={actionLoading === appt.id}
                           >
-                            {isRescheduling ? 'Close' : 'Reschedule'}
+                            {isRescheduling ? t('admin.actions.close') : t('admin.actions.reschedule')}
                           </button>
                           <button
                             className="btn-cancel"
-                            onClick={() => handleCancel(appt.id)}
+                            onClick={() => { speak(t('admin.actions.cancel')); handleCancel(appt.id); }}
                             disabled={actionLoading === appt.id}
                           >
-                            {actionLoading === appt.id ? '...' : 'Cancel'}
+                            {actionLoading === appt.id ? '...' : t('admin.actions.cancel')}
                           </button>
                         </div>
                       )}
@@ -297,10 +337,12 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
 
                   {isRescheduling && (
                     <div className="reschedule-form">
-                      <div className="reschedule-form-title">Choose a new date &amp; time</div>
+                      <div className="reschedule-form-title">
+                        <SpokenText text={t('admin.reschedule.title')} />
+                      </div>
                       <div className="reschedule-fields">
                         <div className="form-group">
-                          <label>New Date</label>
+                          <label>{t('admin.reschedule.newDate')}</label>
                           <input
                             type="date"
                             value={rescheduleDate}
@@ -313,7 +355,9 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
 
                       {rescheduleDate && (
                         rescheduleSlotsLoading ? (
-                          <p className="slots-hint">Loading available times...</p>
+                          <p className="slots-hint">
+                            <SpokenText text={t('admin.reschedule.loadingSlots')} />
+                          </p>
                         ) : rescheduleSlots.length > 0 ? (
                           <div className="reschedule-time-grid">
                             {rescheduleSlots.map((slot) => (
@@ -321,32 +365,34 @@ const AdminDashboard = ({ branches, topics, user, onLogout }) => {
                                 key={slot}
                                 type="button"
                                 className={`reschedule-time-btn ${rescheduleTime === slot ? 'selected' : ''}`}
-                                onClick={() => setRescheduleTime(slot)}
+                                onClick={() => { speak(formatTime12h(slot)); setRescheduleTime(slot); }}
                               >
                                 {formatTime12h(slot)}
                               </button>
                             ))}
                           </div>
                         ) : (
-                          <p className="slots-hint">No available slots for this date.</p>
+                          <p className="slots-hint">
+                            <SpokenText text={t('admin.reschedule.noSlots')} />
+                          </p>
                         )
                       )}
 
                       <div className="reschedule-actions">
                         <button
                           className="btn btn-primary"
-                          onClick={() => handleRescheduleSubmit(appt.id)}
+                          onClick={() => { speak(t('admin.actions.confirmReschedule')); handleRescheduleSubmit(appt.id); }}
                           disabled={!rescheduleDate || !rescheduleTime || actionLoading === appt.id}
                           style={{ fontSize: '0.875rem', padding: '0.5rem 1.5rem', minWidth: 'auto' }}
                         >
-                          {actionLoading === appt.id ? 'Saving...' : 'Confirm Reschedule'}
+                          {actionLoading === appt.id ? t('admin.actions.saving') : t('admin.actions.confirmReschedule')}
                         </button>
                         <button
                           className="btn btn-secondary"
-                          onClick={handleCloseReschedule}
+                          onClick={() => { speak(t('admin.actions.close')); handleCloseReschedule(); }}
                           style={{ fontSize: '0.875rem', padding: '0.5rem 1.5rem', minWidth: 'auto' }}
                         >
-                          Cancel
+                          {t('admin.actions.close')}
                         </button>
                       </div>
                     </div>

@@ -116,5 +116,41 @@
   "accessibility": {
     "readAloud": "Leer en voz alta",
     "clickToHear": "Haga clic para escuchar este texto"
+  },
+  "admin": {
+    "title": "Todas las Citas",
+    "badge": "Admin",
+    "signedInAs": "Sesión como {{name}}",
+    "signOut": "Cerrar Sesión",
+    "refresh": "Actualizar",
+    "stats": {
+      "total": "Total",
+      "scheduled": "Programadas",
+      "cancelled": "Canceladas",
+      "completed": "Completadas"
+    },
+    "search": "Buscar por nombre o correo...",
+    "loading": "Cargando citas...",
+    "noResults": "No se encontraron citas.",
+    "cancelConfirm": "¿Cancelar esta cita?",
+    "actions": {
+      "reschedule": "Reprogramar",
+      "close": "Cerrar",
+      "cancel": "Cancelar",
+      "confirmReschedule": "Confirmar Reprogramación",
+      "saving": "Guardando..."
+    },
+    "reschedule": {
+      "title": "Elija una nueva fecha y hora",
+      "newDate": "Nueva Fecha",
+      "loadingSlots": "Cargando horarios disponibles...",
+      "noSlots": "No hay horarios disponibles para esta fecha."
+    }
+  },
+  "validation": {
+    "illegalChars": "{{field}} contiene caracteres no válidos. Solo se permiten letras, espacios, guiones y apóstrofes.",
+    "firstName": "El nombre",
+    "lastName": "El apellido",
+    "displayName": "El nombre para mostrar"
   }
 }

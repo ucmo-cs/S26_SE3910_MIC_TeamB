@@ -1,18 +1,29 @@
 package com.example.bank_backend.appointment;
 
+import com.example.bank_backend.branch.Branch;
+import com.example.bank_backend.branch.BranchRepository;
+import com.example.bank_backend.email.EmailService;
+import com.example.bank_backend.topic.Topic;
+import com.example.bank_backend.topic.TopicRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
+    private final BranchRepository branchRepository;
+    private final TopicRepository topicRepository;
+    private final EmailService emailService;
 
     // -------------------------------------------------------------------------
     // Mapping helpers
@@ -48,8 +59,35 @@ public class AppointmentService {
     // CRUD operations
     // -------------------------------------------------------------------------
 
+    private void validateBranchExists(Long branchId) {
+        if (!branchRepository.existsById(branchId)) {
+            throw new IllegalArgumentException("Branch not found with ID: " + branchId);
+        }
+    }
+
+    private void validateBusinessHours(LocalDateTime dateTime) {
+        DayOfWeek day = dateTime.getDayOfWeek();
+        int hour = dateTime.getHour();
+        int minute = dateTime.getMinute();
+
+        if (day == DayOfWeek.SUNDAY) {
+            throw new IllegalArgumentException("Appointments are not available on Sundays");
+        }
+        if (minute != 0) {
+            throw new IllegalArgumentException("Appointments must start on the hour (e.g., 09:00, 10:00)");
+        }
+        int endHour = (day == DayOfWeek.SATURDAY) ? 13 : 17;
+        if (hour < 9 || hour >= endHour) {
+            String hours = (day == DayOfWeek.SATURDAY) ? "9:00 AM – 1:00 PM" : "9:00 AM – 5:00 PM";
+            throw new IllegalArgumentException("Appointment time must be within business hours: " + hours);
+        }
+    }
+
     @Transactional
     public AppointmentDTO bookAppointment(AppointmentDTO dto) {
+        validateBranchExists(dto.getBranchId());
+        validateBusinessHours(dto.getAppointmentDateTime());
+
         // Prevent double-booking: same branch + same time slot
         boolean alreadyBooked = appointmentRepository
                 .existsByBranchIdAndAppointmentDateTimeAndStatus(
@@ -61,6 +99,21 @@ public class AppointmentService {
         }
 
         Appointment saved = appointmentRepository.save(toEntity(dto));
+
+        branchRepository.findById(dto.getBranchId()).ifPresent(branch ->
+                topicRepository.findById(dto.getTopicId()).ifPresent(topic ->
+                        emailService.sendBookingConfirmation(
+                                saved.getCustomerEmail(),
+                                saved.getCustomerName(),
+                                saved.getAppointmentDateTime(),
+                                branch.getName(),
+                                branch.getAddress(),
+                                branch.getWeekdayHours(),
+                                topic.getName()
+                        )
+                )
+        );
+
         return toDTO(saved);
     }
 

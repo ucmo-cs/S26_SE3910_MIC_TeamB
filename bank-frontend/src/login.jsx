@@ -34,7 +34,7 @@ const Login = ({ onLogin }) => {
 
     const ILLEGAL_CHARS = /[^a-zA-ZÀ-ÿ\s'\-]/;
     if (isRegistering && ILLEGAL_CHARS.test(displayName.trim())) {
-      setError('Display name contains invalid characters. Only letters, spaces, hyphens, and apostrophes are allowed.');
+      setError(t('validation.illegalChars', { field: t('validation.displayName') }));
       return;
     }
 
