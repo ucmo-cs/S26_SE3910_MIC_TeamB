@@ -24,8 +24,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -36,7 +36,7 @@ spring:
 
 app:
   mail:
-    from: ${MAIL_USERNAME:no-reply@commercebank.com}
+    from: ${MAIL_USERNAME}
 
 jwt:
   # Base64-encoded signing key for local/dev only.
