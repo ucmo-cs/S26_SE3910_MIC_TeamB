@@ -2,6 +2,7 @@ package com.example.bank_backend.appointment;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -68,6 +69,17 @@ public class GlobalExceptionHandler {
                 "status", HttpStatus.BAD_REQUEST.value(),
                 "error", "Validation Failed",
                 "message", errors
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnreadableMessage(HttpMessageNotReadableException ex) {
+        Map<String, Object> body = Map.of(
+                "timestamp", LocalDateTime.now().toString(),
+                "status", HttpStatus.BAD_REQUEST.value(),
+                "error", "Bad Request",
+                "message", "Malformed request body: " + ex.getMostSpecificCause().getMessage()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }

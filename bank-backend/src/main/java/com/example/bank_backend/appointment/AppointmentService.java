@@ -76,8 +76,8 @@ public class AppointmentService {
         if (day == DayOfWeek.SUNDAY) {
             throw new IllegalArgumentException("Appointments are not available on Sundays");
         }
-        if (minute != 0) {
-            throw new IllegalArgumentException("Appointments must start on the hour (e.g., 09:00, 10:00)");
+        if (minute != 0 && minute != 30) {
+            throw new IllegalArgumentException("Appointments must start on a 30-minute boundary (e.g., 09:00, 09:30, 10:00)");
         }
         int endHour = (day == DayOfWeek.SATURDAY) ? 13 : 17;
         if (hour < 9 || hour >= endHour) {
